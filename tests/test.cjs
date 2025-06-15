@@ -1,5 +1,5 @@
 // test.cjs for commonjs
-const { Daffodil } = require("../index.js");
+const { Daffodil } = require("../index.cjs");
 
 const deployer = new Daffodil({
   remoteUser: "root", // username of cloud server
