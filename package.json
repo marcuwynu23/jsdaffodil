@@ -1,6 +1,6 @@
 {
   "name": "@marcuwynu23/jsdaffodil",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A deploy automation framework like pydaffodil, built in Node.js",
   "main": "index.js",
   "exports": {
