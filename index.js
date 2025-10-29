@@ -101,27 +101,49 @@ export class Daffodil {
     const spinner = ora(
       `Transferring files from ${localPath} to ${destinationPath}`
     ).start();
+
     try {
-      const files = await fs.readdir(localPath);
+      const allFiles = [];
+
+      // Recursive directory walker
+      const walk = async (dir) => {
+        const entries = await fs.readdir(dir, {withFileTypes: true});
+        for (const entry of entries) {
+          if (this.excludeList.includes(entry.name)) continue;
+
+          const fullLocalPath = path.join(dir, entry.name);
+          const relativePath = path.relative(localPath, fullLocalPath);
+          const remoteFullPath = path.posix
+            .join(destinationPath, relativePath)
+            .replace(/\\/g, "/");
+
+          if (entry.isDirectory()) {
+            // Create the directory on remote host
+            await this.ssh.execCommand(`mkdir -p "${remoteFullPath}"`);
+            await walk(fullLocalPath);
+          } else if (entry.isFile()) {
+            allFiles.push({local: fullLocalPath, remote: remoteFullPath});
+          }
+        }
+      };
+
+      // Start traversal
+      await walk(localPath);
+
+      // Upload files with progress
       const bar = new cliProgress.SingleBar(
         {},
         cliProgress.Presets.shades_classic
       );
-      bar.start(files.length, 0);
+      bar.start(allFiles.length, 0);
 
-      for (const file of files) {
-        if (this.excludeList.includes(file)) continue;
-
-        const filePath = path.join(localPath, file);
-        await this.ssh.putFile(
-          filePath,
-          path.posix.join(destinationPath, file)
-        );
+      for (const {local, remote} of allFiles) {
+        await this.ssh.putFile(local, remote);
         bar.increment();
       }
 
       bar.stop();
-      spinner.succeed(chalk.green("Transfer complete"));
+      spinner.succeed(chalk.green("Transfer complete (including subfolders)"));
     } catch (err) {
       spinner.fail(chalk.red(`Transfer failed: ${err.message}`));
     }
