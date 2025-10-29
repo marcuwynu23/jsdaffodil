@@ -97,41 +97,32 @@ export class Daffodil {
     await this.sshCommand(`mkdir -p ${fullPath}`);
   }
 
-  import path from "path";
-import fs from "fs-extra";
-import ora from "ora";
-import cliProgress from "cli-progress";
-import chalk from "chalk";
-
-export class Daffodil {
-  constructor({ ssh, remotePath = ".", excludeList = [] }) {
-    this.ssh = ssh;
-    this.remotePath = remotePath;
-    this.excludeList = excludeList;
-  }
-
   async transferFiles(localPath, destinationPath = this.remotePath) {
-    const spinner = ora(`Transferring files from ${localPath} to ${destinationPath}`).start();
+    const spinner = ora(
+      `Transferring files from ${localPath} to ${destinationPath}`
+    ).start();
 
     try {
       const allFiles = [];
 
       // Recursive directory walk
       const walk = async (dir) => {
-        const entries = await fs.readdir(dir, { withFileTypes: true });
+        const entries = await fs.readdir(dir, {withFileTypes: true});
         for (const entry of entries) {
           if (this.excludeList.includes(entry.name)) continue;
 
           const fullLocalPath = path.join(dir, entry.name);
           const relativePath = path.relative(localPath, fullLocalPath);
-          const remoteFullPath = path.posix.join(destinationPath, relativePath).replace(/\\/g, "/");
+          const remoteFullPath = path.posix
+            .join(destinationPath, relativePath)
+            .replace(/\\/g, "/");
 
           if (entry.isDirectory()) {
             // Safe mkdir: ignore if already exists
             await this.ssh.execCommand(`mkdir -p "${remoteFullPath}" || true`);
             await walk(fullLocalPath);
           } else if (entry.isFile()) {
-            allFiles.push({ local: fullLocalPath, remote: remoteFullPath });
+            allFiles.push({local: fullLocalPath, remote: remoteFullPath});
           }
         }
       };
@@ -139,10 +130,13 @@ export class Daffodil {
       await walk(localPath);
 
       // Upload all files (overwrite existing)
-      const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+      const bar = new cliProgress.SingleBar(
+        {},
+        cliProgress.Presets.shades_classic
+      );
       bar.start(allFiles.length, 0);
 
-      for (const { local, remote } of allFiles) {
+      for (const {local, remote} of allFiles) {
         // Explicitly remove file before upload to ensure overwrite
         await this.ssh.execCommand(`rm -f "${remote}" || true`);
         await this.ssh.putFile(local, remote);
@@ -150,13 +144,13 @@ export class Daffodil {
       }
 
       bar.stop();
-      spinner.succeed(chalk.green("Transfer complete (subfolders + overwrite)"));
+      spinner.succeed(
+        chalk.green("Transfer complete (subfolders + overwrite)")
+      );
     } catch (err) {
       spinner.fail(chalk.red(`Transfer failed: ${err.message}`));
     }
   }
-}
-
 
   async deploy(steps) {
     await this.connect();
