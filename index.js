@@ -1,13 +1,19 @@
 import chalk from "chalk";
-import { execSync } from "child_process";
+import {execSync} from "child_process";
 import cliProgress from "cli-progress";
 import fs from "fs-extra";
-import { NodeSSH } from "node-ssh";
+import {NodeSSH} from "node-ssh";
 import ora from "ora";
 import path from "path";
 
 export class Daffodil {
-  constructor({ remoteUser, remoteHost, remotePath = ".", port = 22, ignoreFile = ".scpignore" }) {
+  constructor({
+    remoteUser,
+    remoteHost,
+    remotePath = ".",
+    port = 22,
+    ignoreFile = ".scpignore",
+  }) {
     this.remoteUser = remoteUser;
     this.remoteHost = remoteHost;
     this.remotePath = remotePath;
@@ -34,9 +40,15 @@ export class Daffodil {
             privateKey: fs.readFileSync(keyPath, "utf8"),
           });
           spinner.succeed(chalk.green(`SSH Connected using key: ${keyFile}`));
+
+          const ensurePath = path.posix.resolve(this.remotePath);
+          await this.ssh.execCommand(`mkdir -p ${ensurePath}`);
+          console.log(
+            chalk.blue(`Verified or created remote path: ${ensurePath}`)
+          );
           return; // ✅ Success, skip remaining
         } catch (err) {
-          failures.push({ key: keyFile, error: err.message });
+          failures.push({key: keyFile, error: err.message});
         }
       }
     }
@@ -62,7 +74,7 @@ export class Daffodil {
 
   async runCommand(cmd) {
     try {
-      const output = execSync(cmd, { stdio: "pipe" }); // changed from 'inherit' to 'pipe'
+      const output = execSync(cmd, {stdio: "pipe"}); // changed from 'inherit' to 'pipe'
       const result = output?.toString() || "";
       console.log(result);
       return result;
@@ -86,17 +98,25 @@ export class Daffodil {
   }
 
   async transferFiles(localPath, destinationPath = this.remotePath) {
-    const spinner = ora(`Transferring files from ${localPath} to ${destinationPath}`).start();
+    const spinner = ora(
+      `Transferring files from ${localPath} to ${destinationPath}`
+    ).start();
     try {
       const files = await fs.readdir(localPath);
-      const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+      const bar = new cliProgress.SingleBar(
+        {},
+        cliProgress.Presets.shades_classic
+      );
       bar.start(files.length, 0);
 
       for (const file of files) {
         if (this.excludeList.includes(file)) continue;
 
         const filePath = path.join(localPath, file);
-        await this.ssh.putFile(filePath, path.posix.join(destinationPath, file));
+        await this.ssh.putFile(
+          filePath,
+          path.posix.join(destinationPath, file)
+        );
         bar.increment();
       }
 
@@ -110,7 +130,7 @@ export class Daffodil {
   async deploy(steps) {
     await this.connect();
     for (let i = 0; i < steps.length; i++) {
-      const { step, command } = steps[i];
+      const {step, command} = steps[i];
       console.log(chalk.yellow(`Step ${i + 1}: ${step}`));
       try {
         await command();
