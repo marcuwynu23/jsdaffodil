@@ -9,9 +9,9 @@
   },
   "type": "module",
   "scripts": {
-    "test:common": "node tests/test.cjs",
-    "test:esm": "node tests/test.mjs",
-    "test": "npm run test:common && npm run test:esm"
+    "sample:common": "node samples/sample.cjs",
+    "sample:esm": "node samples/sample.mjs",
+    "sample": "npm run sample:common && npm run sample:esm"
   },
   "keywords": [
     "deploy",

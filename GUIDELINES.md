@@ -282,7 +282,7 @@ desktop.ini
 .gitignore
 
 # Test files
-tests/
+samples/
 *.test.js
 *.spec.js
 ```
@@ -438,10 +438,10 @@ node_modules/
 
 ### Complete Deployment Script
 
-See working examples in the `tests/` directory:
+See working examples in the `samples/` directory:
 
-- **ESM Example**: `tests/test.mjs`
-- **CommonJS Example**: `tests/test.cjs`
+- **ESM Example**: `samples/sample.mjs`
+- **CommonJS Example**: `samples/sample.cjs`
 
 ### Example: Full Stack Deployment
 
@@ -616,14 +616,14 @@ deployer.deploy(steps).catch((error) => {
 - **README.md** - Quick reference and overview
 - **DOCUMENTATION.md** - Developer documentation
 - **COLLABORATION.md** - Contribution guidelines
-- **Tests Directory** - Working examples in `tests/`
+- **Samples Directory** - Working examples in `samples/`
 
 ## 💬 Getting Help
 
 If you encounter issues:
 
 1. Check this guide first
-2. Review the examples in `tests/` directory
+2. Review the examples in `samples/` directory
 3. Enable verbose mode for detailed logs
 4. Check GitHub Issues for similar problems
 5. Open a new issue with details

@@ -32,13 +32,13 @@
 
 This project includes comprehensive documentation:
 
-- **[GUIDELINES.md](./GUIDELINES.md)** - Complete usage guide with examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `tests/` directory.
+- **[GUIDELINES.md](./GUIDELINES.md)** - Complete usage guide with examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `samples/` directory.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** - Developer documentation covering architecture, code organization, testing, and extension points for contributors.
 - **[COLLABORATION.md](./COLLABORATION.md)** - Contribution guidelines, code review process, and collaboration best practices.
 
-For quick examples, check the `tests/` directory:
-- `tests/test.mjs` - ESM module example
-- `tests/test.cjs` - CommonJS module example
+For quick examples, check the `samples/` directory:
+- `samples/sample.mjs` - ESM module example
+- `samples/sample.cjs` - CommonJS module example
 
 ---
 

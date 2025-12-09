@@ -43,9 +43,9 @@ jsdaffodil/
 ├── DOCUMENTATION.md      # This file - developer docs
 ├── COLLABORATION.md      # Contribution guidelines
 ├── LICENSE               # MIT License
-├── tests/                # Test examples
-│   ├── test.mjs         # ESM test example
-│   └── test.cjs          # CommonJS test example
+├── samples/              # Sample examples
+│   ├── sample.mjs       # ESM sample example
+│   └── sample.cjs       # CommonJS sample example
 └── dist/                 # Distribution/test files
 ```
 
@@ -288,22 +288,22 @@ try {
 
 ## 🧪 Testing
 
-### Test Structure
+### Sample Structure
 
-Tests are located in the `tests/` directory:
+Samples are located in the `samples/` directory:
 
-- `test.mjs` - ESM module example
-- `test.cjs` - CommonJS module example
+- `sample.mjs` - ESM module example
+- `sample.cjs` - CommonJS module example
 
-### Running Tests
+### Running Samples
 
 ```bash
-# Run all tests
-npm test
+# Run all samples
+npm run sample
 
-# Run specific test
-node tests/test.mjs
-node tests/test.cjs
+# Run specific sample
+node samples/sample.mjs
+node samples/sample.cjs
 ```
 
 ### Writing Tests
@@ -315,7 +315,7 @@ Tests should:
 3. Handle errors appropriately
 4. Clean up after execution
 
-**Example Test Structure**:
+**Example Sample Structure**:
 
 ```javascript
 import { Daffodil } from "../index.js";
@@ -327,8 +327,8 @@ const deployer = new Daffodil({
 });
 
 const steps = [
-  { step: "Test step", command: async () => {
-    // Test implementation
+  { step: "Sample step", command: async () => {
+    // Sample implementation
   }},
 ];
 
@@ -336,7 +336,7 @@ const steps = [
   try {
     await deployer.deploy(steps);
   } catch (err) {
-    console.error("Test failed:", err);
+    console.error("Deployment failed:", err);
     process.exit(1);
   }
 })();
@@ -568,7 +568,7 @@ if (this.verbose) {
 - **GUIDELINES.md** - User guide and examples
 - **COLLABORATION.md** - Contribution guidelines
 - **README.md** - Quick reference
-- **Tests** - Working examples in `tests/` directory
+- **Samples** - Working examples in `samples/` directory
 
 ## 🔗 External Dependencies
 

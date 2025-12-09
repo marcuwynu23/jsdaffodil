@@ -1,4 +1,4 @@
-// test.mjs or test.js (ESM)
+// sample.mjs - ESM module example
 import { Daffodil } from "../index.js";
 import dotenv from "dotenv";
 dotenv.config();
