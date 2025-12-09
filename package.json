@@ -16,7 +16,9 @@
     "test:common": "node src/tests/commonjs/test-daffodil.cjs",
     "test": "npm run test:esm && npm run test:common",
     "format": "prettier --write \"src/**/*.{js,mjs,cjs,json,md}\" \"*.{js,json,md}\"",
-    "format:check": "prettier --check \"src/**/*.{js,mjs,cjs,json,md}\" \"*.{js,json,md}\""
+    "format:check": "prettier --check \"src/**/*.{js,mjs,cjs,json,md}\" \"*.{js,json,md}\"",
+    "changelog": "auto-changelog",
+    "prepare": "husky install"
   },
   "keywords": [
     "deploy",
@@ -63,6 +65,8 @@
     "tar": "^7.5.2"
   },
   "devDependencies": {
-    "dotenv": "^17.2.3"
+    "auto-changelog": "^2.5.0",
+    "dotenv": "^17.2.3",
+    "husky": "^9.1.7"
   }
 }
