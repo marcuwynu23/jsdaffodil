@@ -34,7 +34,7 @@ This project includes comprehensive documentation:
 
 - **[GUIDELINES.md](./GUIDELINES.md)** - Complete usage guide with examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `samples/` directory.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** - Developer documentation covering architecture, code organization, testing, and extension points for contributors.
-- **[COLLABORATION.md](./COLLABORATION.md)** - Contribution guidelines, code review process, and collaboration best practices.
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Contribution guidelines, code review process, and collaboration best practices.
 
 For quick examples, check the `samples/` directory:
 - `samples/sample.mjs` - ESM module example
@@ -333,7 +333,7 @@ const steps = [
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [COLLABORATION.md](./COLLABORATION.md) guide for contribution guidelines, code review process, and best practices.
+Contributions are welcome! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) guide for contribution guidelines, code review process, and best practices.
 
 For developers, see [DOCUMENTATION.md](./DOCUMENTATION.md) for architecture details and development setup.
 

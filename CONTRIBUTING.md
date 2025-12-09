@@ -1,12 +1,12 @@
-# 🤝 Collaboration Guide
+# 🤝 Contributing to JSDaffodil
 
-Welcome to the JSDaffodil collaboration guide! This document outlines how to contribute, collaborate, and work effectively with the JSDaffodil project.
+Welcome to the JSDaffodil contribution guide! This document outlines how to contribute, collaborate, and work effectively with the JSDaffodil project.
 
 ## 📚 Documentation Overview
 
 This project includes comprehensive documentation to help you get started:
 
-- **[GUIDELINES.md](./GUIDELINES.md)** - **Complete usage guide** with comprehensive examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `samples/` directory.
+- **[GUIDELINES.md](./GUIDELINES.md)** - **Complete usage guide** with comprehensive examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `src/samples/` directory.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** - **Developer documentation** for contributing, extending, and developing the project. Covers architecture, code organization, testing, and extension points.
 - **[README.md](./README.md)** - Quick start and overview for end users
 
@@ -20,8 +20,8 @@ Before contributing, please:
    - Check [README.md](./README.md) for quick reference
 
 2. **Explore the Codebase**
-   - Check the `samples/` directory for usage examples
-   - Review `index.js` for the main implementation
+   - Check the `src/samples/` directory for usage examples
+   - Review `src/index.js` for the main implementation
    - Understand the project structure
 
 3. **Set Up Your Environment**
@@ -53,16 +53,27 @@ git checkout -b fix/your-bug-fix
 - Write tests for new features
 - Update documentation as needed
 - Ensure all tests pass: `npm test`
+- Format code: `npm run format` (if configured)
 
 ### 4. Commit Changes
 
-Use clear, descriptive commit messages:
+Use clear, descriptive commit messages following [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```bash
 git commit -m "feat: add verbose logging option"
 git commit -m "fix: resolve baseDir initialization issue"
 git commit -m "docs: update usage examples"
+git commit -m "test: add tests for error handling"
 ```
+
+**Commit Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
 
 ### 5. Push and Create Pull Request
 
@@ -74,6 +85,7 @@ Then create a Pull Request on GitHub with:
 - Clear description of changes
 - Reference to related issues
 - Screenshots/examples if applicable
+- Updated CHANGELOG.md entry
 
 ## 📋 Code Review Guidelines
 
@@ -84,6 +96,7 @@ Then create a Pull Request on GitHub with:
 - Add tests for new features
 - Update documentation
 - Respond to review feedback promptly
+- Ensure all CI checks pass
 
 ### For Reviewers
 
@@ -138,7 +151,7 @@ When contributing:
 - Update relevant documentation files
 - Add examples for new features
 - Keep code comments clear and helpful
-- Update CHANGELOG if applicable
+- Update [CHANGELOG.md](./CHANGELOG.md) with your changes
 
 ## 🎨 Code Style
 
@@ -147,11 +160,12 @@ When contributing:
 - Add JSDoc comments for public methods
 - Keep functions focused and small
 - Handle errors appropriately
+- Follow the `.editorconfig` and `.prettierrc` settings
 
 ## 🔐 Security
 
 - Never commit sensitive information (SSH keys, passwords, etc.)
-- Report security vulnerabilities privately
+- Report security vulnerabilities privately to the maintainers
 - Follow security best practices
 - Review dependencies regularly
 
@@ -171,11 +185,11 @@ Contributors will be:
 
 ## 📖 Additional Resources
 
-- **Usage Guide**: See [GUIDELINES.md](./GUIDELINES.md) for comprehensive usage examples, best practices, and troubleshooting. The guide includes sample code from the `samples/` directory.
+- **Usage Guide**: See [GUIDELINES.md](./GUIDELINES.md) for comprehensive usage examples, best practices, and troubleshooting. The guide includes sample code from the `src/samples/` directory.
 - **Developer Guide**: See [DOCUMENTATION.md](./DOCUMENTATION.md) for complete architecture documentation, development setup, code organization, testing guidelines, and extension points.
-- **Examples**: Check the `samples/` directory for working examples:
-  - `samples/sample.mjs` - ESM module example
-  - `samples/sample.cjs` - CommonJS module example
+- **Examples**: Check the `src/samples/` directory for working examples:
+  - `src/samples/sample.mjs` - ESM module example
+  - `src/samples/sample.cjs` - CommonJS module example
 
 ## ❓ Questions?
 

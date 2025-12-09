@@ -41,7 +41,7 @@ jsdaffodil/
 ├── README.md            # User-facing documentation
 ├── GUIDELINES.md         # Usage guide
 ├── DOCUMENTATION.md      # This file - developer docs
-├── COLLABORATION.md      # Contribution guidelines
+├── CONTRIBUTING.md       # Contribution guidelines
 ├── LICENSE               # MIT License
 ├── samples/              # Sample examples
 │   ├── sample.mjs       # ESM sample example
@@ -480,7 +480,7 @@ chore: maintenance tasks
 4. Update documentation
 5. Submit pull request
 
-See [COLLABORATION.md](./COLLABORATION.md) for detailed guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 
 ## 🎨 Code Style
 
@@ -566,7 +566,7 @@ if (this.verbose) {
 ## 📚 Additional Resources
 
 - **GUIDELINES.md** - User guide and examples
-- **COLLABORATION.md** - Contribution guidelines
+- **CONTRIBUTING.md** - Contribution guidelines
 - **README.md** - Quick reference
 - **Samples** - Working examples in `samples/` directory
 
@@ -614,7 +614,7 @@ Potential areas for extension:
 If you have questions about development:
 
 1. Review this documentation
-2. Check [COLLABORATION.md](./COLLABORATION.md)
+2. Check [CONTRIBUTING.md](./CONTRIBUTING.md)
 3. Review existing code
 4. Open an issue on GitHub
 

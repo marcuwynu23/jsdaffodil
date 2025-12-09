@@ -615,7 +615,7 @@ deployer.deploy(steps).catch((error) => {
 
 - **README.md** - Quick reference and overview
 - **DOCUMENTATION.md** - Developer documentation
-- **COLLABORATION.md** - Contribution guidelines
+- **CONTRIBUTING.md** - Contribution guidelines
 - **Samples Directory** - Working examples in `samples/`
 
 ## 💬 Getting Help
