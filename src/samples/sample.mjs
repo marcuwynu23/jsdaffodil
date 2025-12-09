@@ -25,7 +25,7 @@ const steps = [
   },
   {
     step: "Transfer files.",
-    command: () => deployer.transferFiles("s", "/root/test"),
+    command: () => deployer.transferFiles("dist", "/root/test"),
   },
 ];
 

@@ -61,6 +61,17 @@ export class Daffodil {
     ignoreFile = ".scpignore",
     verbose = false,
   }) {
+    // Validate required parameters
+    if (!remoteUser || typeof remoteUser !== "string") {
+      throw new Error("remoteUser is required and must be a string");
+    }
+    if (!remoteHost || typeof remoteHost !== "string") {
+      throw new Error("remoteHost is required and must be a string");
+    }
+    if (port && (typeof port !== "number" || port < 1 || port > 65535)) {
+      throw new Error("port must be a number between 1 and 65535");
+    }
+
     this.remoteUser = remoteUser;
     this.remoteHost = remoteHost;
     this.remotePath = remotePath;
@@ -86,6 +97,17 @@ export class Daffodil {
    */
   getTimestamp() {
     return new Date().toISOString();
+  }
+
+  /**
+   * Escape shell arguments to prevent command injection
+   * @param {string} arg - Argument to escape
+   * @returns {string} Escaped argument
+   * @private
+   */
+  escapeShellArg(arg) {
+    // Replace single quotes with '\'' and wrap in single quotes
+    return `'${String(arg).replace(/'/g, "'\\''")}'`;
   }
 
   /**
@@ -238,7 +260,7 @@ export class Daffodil {
           this.logTimeConsumption("SSH Connection", startTime);
 
           const ensurePath = path.posix.resolve(this.remotePath);
-          await this.ssh.execCommand(`mkdir -p ${ensurePath}`);
+          await this.ssh.execCommand(`mkdir -p ${this.escapeShellArg(ensurePath)}`);
           this.log(`Verified or created remote path: ${ensurePath}`, "blue");
           return; // ✅ Success, skip remaining
         } catch (err) {
@@ -269,7 +291,10 @@ export class Daffodil {
       );
     }
 
-    process.exit(1);
+    // Throw error instead of process.exit for library code
+    throw new Error(
+      "SSH connection failed: No valid SSH keys worked. Please ensure your SSH keys are properly configured."
+    );
   }
 
   loadIgnoreList() {
@@ -338,7 +363,7 @@ export class Daffodil {
     const startTime = Date.now();
     const fullPath = path.posix.join(this.remotePath, dirName);
     this.log(`Creating remote directory: ${fullPath}`, "blue");
-    await this.sshCommand(`mkdir -p ${fullPath}`);
+    await this.sshCommand(`mkdir -p ${this.escapeShellArg(fullPath)}`);
     this.logTimeConsumption(`Create directory: ${fullPath}`, startTime);
   }
 
@@ -542,7 +567,7 @@ export class Daffodil {
       if (this.verbose) {
         this.log("Removing old archive from remote if exists", "blue");
       }
-      await this.ssh.execCommand(`rm -f "${remoteArchivePath}" || true`);
+      await this.ssh.execCommand(`rm -f ${this.escapeShellArg(remoteArchivePath)} || true`);
 
       // Transfer the archive file
       await this.ssh.putFile(archivePath, remoteArchivePath);
@@ -562,11 +587,11 @@ export class Daffodil {
       }
 
       // Ensure destination directory exists
-      await this.ssh.execCommand(`mkdir -p "${destinationPath}" || true`);
+      await this.ssh.execCommand(`mkdir -p ${this.escapeShellArg(destinationPath)} || true`);
 
       // Extract archive (overwrite existing files)
       const extractResult = await this.ssh.execCommand(
-        `cd "${destinationPath}" && tar -xzf "${remoteArchivePath}" && rm -f "${remoteArchivePath}"`
+        `cd ${this.escapeShellArg(destinationPath)} && tar -xzf ${this.escapeShellArg(remoteArchivePath)} && rm -f ${this.escapeShellArg(remoteArchivePath)}`
       );
 
       if (extractResult.code !== 0) {
@@ -608,7 +633,7 @@ export class Daffodil {
         if (this.verbose) {
           this.log("Cleaning up remote archive after error", "yellow");
         }
-        await this.ssh.execCommand(`rm -f "${remoteArchivePath}" || true`);
+        await this.ssh.execCommand(`rm -f ${this.escapeShellArg(remoteArchivePath)} || true`);
       } catch (cleanupErr) {
         // Ignore cleanup errors
         if (this.verbose) {
