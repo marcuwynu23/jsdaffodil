@@ -12,13 +12,16 @@
 //   })();
 
 // Export a helpful error message
-module.exports = new Proxy({}, {
-  get(target, prop) {
-    throw new Error(
-      `Cannot use require() with ESM module. Use dynamic import instead:\n` +
-      `  const { ${prop} } = await import('@marcuwynu23/jsdaffodil');\n` +
-      `Or use the ESM import syntax:\n` +
-      `  import { ${prop} } from '@marcuwynu23/jsdaffodil';`
-    );
+module.exports = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      throw new Error(
+        `Cannot use require() with ESM module. Use dynamic import instead:\n` +
+          `  const { ${prop} } = await import('@marcuwynu23/jsdaffodil');\n` +
+          `Or use the ESM import syntax:\n` +
+          `  import { ${prop} } from '@marcuwynu23/jsdaffodil';`
+      );
+    },
   }
-});
+);

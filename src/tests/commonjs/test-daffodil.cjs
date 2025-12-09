@@ -410,7 +410,10 @@ const path = require("path");
       remoteUser: TEST_CONFIG.remoteUser,
       remoteHost: TEST_CONFIG.remoteHost,
     });
-    assert(typeof deployer.deploy === "function", "deploy should be a function");
+    assert(
+      typeof deployer.deploy === "function",
+      "deploy should be a function"
+    );
   });
 
   await test("deploy - throws DeploymentError when step fails (non-verbose)", async () => {
