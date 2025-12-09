@@ -1,6 +1,6 @@
 {
   "name": "@marcuwynu23/jsdaffodil",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Cross-platform deployment automation framework for Node.js with SSH, archive-based file transfer, and step-by-step task execution. Supports Windows, Linux, and macOS.",
   "main": "index.js",
   "exports": {
