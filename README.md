@@ -28,6 +28,20 @@
 
 ---
 
+## 📚 Documentation
+
+This project includes comprehensive documentation:
+
+- **[GUIDELINES.md](./GUIDELINES.md)** - Complete usage guide with examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `tests/` directory.
+- **[DOCUMENTATION.md](./DOCUMENTATION.md)** - Developer documentation covering architecture, code organization, testing, and extension points for contributors.
+- **[COLLABORATION.md](./COLLABORATION.md)** - Contribution guidelines, code review process, and collaboration best practices.
+
+For quick examples, check the `tests/` directory:
+- `tests/test.mjs` - ESM module example
+- `tests/test.cjs` - CommonJS module example
+
+---
+
 ## 📦 Installation
 
 ```bash
@@ -319,7 +333,9 @@ const steps = [
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please read our [COLLABORATION.md](./COLLABORATION.md) guide for contribution guidelines, code review process, and best practices.
+
+For developers, see [DOCUMENTATION.md](./DOCUMENTATION.md) for architecture details and development setup.
 
 ---
 
