@@ -260,7 +260,9 @@ export class Daffodil {
           this.logTimeConsumption("SSH Connection", startTime);
 
           const ensurePath = path.posix.resolve(this.remotePath);
-          await this.ssh.execCommand(`mkdir -p ${this.escapeShellArg(ensurePath)}`);
+          await this.ssh.execCommand(
+            `mkdir -p ${this.escapeShellArg(ensurePath)}`
+          );
           this.log(`Verified or created remote path: ${ensurePath}`, "blue");
           return; // ✅ Success, skip remaining
         } catch (err) {
@@ -567,7 +569,9 @@ export class Daffodil {
       if (this.verbose) {
         this.log("Removing old archive from remote if exists", "blue");
       }
-      await this.ssh.execCommand(`rm -f ${this.escapeShellArg(remoteArchivePath)} || true`);
+      await this.ssh.execCommand(
+        `rm -f ${this.escapeShellArg(remoteArchivePath)} || true`
+      );
 
       // Transfer the archive file
       await this.ssh.putFile(archivePath, remoteArchivePath);
@@ -587,7 +591,9 @@ export class Daffodil {
       }
 
       // Ensure destination directory exists
-      await this.ssh.execCommand(`mkdir -p ${this.escapeShellArg(destinationPath)} || true`);
+      await this.ssh.execCommand(
+        `mkdir -p ${this.escapeShellArg(destinationPath)} || true`
+      );
 
       // Extract archive (overwrite existing files)
       const extractResult = await this.ssh.execCommand(
@@ -633,7 +639,9 @@ export class Daffodil {
         if (this.verbose) {
           this.log("Cleaning up remote archive after error", "yellow");
         }
-        await this.ssh.execCommand(`rm -f ${this.escapeShellArg(remoteArchivePath)} || true`);
+        await this.ssh.execCommand(
+          `rm -f ${this.escapeShellArg(remoteArchivePath)} || true`
+        );
       } catch (cleanupErr) {
         // Ignore cleanup errors
         if (this.verbose) {
