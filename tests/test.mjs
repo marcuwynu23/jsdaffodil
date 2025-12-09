@@ -13,6 +13,10 @@ const deployer = new Daffodil({
   remotePath,   // from .env
 });
 
+// Enable verbose logging with timestamps and time consumption
+deployer.setOption({
+  verbose: false // or true, default to false
+});
 
 const steps = [
   { step: "List local directory.", command: () => deployer.runCommand("ls -a") },
@@ -25,7 +29,12 @@ const steps = [
     await deployer.deploy(steps);
     console.log("Deployment finished successfully!");
   } catch (err) {
-    console.error("Deployment failed:", err);
+    // When verbose is false, show only the message, otherwise show full error
+    if (deployer.verbose) {
+      console.error("Deployment failed:", err);
+    } else {
+      console.error("Deployment failed:", err.message);
+    }
   }
 })();
 
