@@ -28,13 +28,40 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set up SSH environment variables
+        env:
+          TEST_REMOTE_USER: ${{ secrets.TEST_REMOTE_USER }}
+          TEST_REMOTE_HOST: ${{ secrets.TEST_REMOTE_HOST }}
+          TEST_REMOTE_PATH: ${{ secrets.TEST_REMOTE_PATH }}
+          TEST_REMOTE_PORT: ${{ secrets.TEST_REMOTE_PORT }}
+        run: |
+          echo "TEST_REMOTE_USER=${{ secrets.TEST_REMOTE_USER }}" >> $GITHUB_ENV
+          echo "TEST_REMOTE_HOST=${{ secrets.TEST_REMOTE_HOST }}" >> $GITHUB_ENV
+          echo "TEST_REMOTE_PATH=${{ secrets.TEST_REMOTE_PATH }}" >> $GITHUB_ENV
+          echo "TEST_REMOTE_PORT=${{ secrets.TEST_REMOTE_PORT }}" >> $GITHUB_ENV
+
       - name: Run ESM tests
+        env:
+          TEST_REMOTE_USER: ${{ secrets.TEST_REMOTE_USER }}
+          TEST_REMOTE_HOST: ${{ secrets.TEST_REMOTE_HOST }}
+          TEST_REMOTE_PATH: ${{ secrets.TEST_REMOTE_PATH }}
+          TEST_REMOTE_PORT: ${{ secrets.TEST_REMOTE_PORT }}
         run: npm run test:esm
 
       - name: Run CommonJS tests
+        env:
+          TEST_REMOTE_USER: ${{ secrets.TEST_REMOTE_USER }}
+          TEST_REMOTE_HOST: ${{ secrets.TEST_REMOTE_HOST }}
+          TEST_REMOTE_PATH: ${{ secrets.TEST_REMOTE_PATH }}
+          TEST_REMOTE_PORT: ${{ secrets.TEST_REMOTE_PORT }}
         run: npm run test:common
 
       - name: Run all tests
+        env:
+          TEST_REMOTE_USER: ${{ secrets.TEST_REMOTE_USER }}
+          TEST_REMOTE_HOST: ${{ secrets.TEST_REMOTE_HOST }}
+          TEST_REMOTE_PATH: ${{ secrets.TEST_REMOTE_PATH }}
+          TEST_REMOTE_PORT: ${{ secrets.TEST_REMOTE_PORT }}
         run: npm test
 
   lint:

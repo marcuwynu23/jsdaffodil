@@ -83,10 +83,10 @@ The test suite covers:
 
 Tests use environment variables for configuration (with defaults):
 
-- `REMOTE_USER` - SSH username (default: "testuser")
-- `REMOTE_HOST` - SSH hostname (default: "test.example.com")
-- `REMOTE_PATH` - Remote path (default: "/tmp/test")
-- `REMOTE_PORT` - SSH port (default: 22)
+- `TEST_REMOTE_USER` - SSH username (default: "testuser")
+- `TEST_REMOTE_HOST` - SSH hostname (default: "test.example.com")
+- `TEST_REMOTE_PATH` - Remote path (default: "/tmp/test")
+- `TEST_REMOTE_PORT` - SSH port (default: 22)
 
 ## Notes
 

@@ -10,10 +10,10 @@ const path = require("path");
 
   // Test configuration
   const TEST_CONFIG = {
-    remoteUser: process.env.REMOTE_USER || "testuser",
-    remoteHost: process.env.REMOTE_HOST || "test.example.com",
-    remotePath: process.env.REMOTE_PATH || "/tmp/test",
-    port: parseInt(process.env.REMOTE_PORT) || 22,
+    remoteUser: process.env.TEST_REMOTE_USER || "testuser",
+    remoteHost: process.env.TEST_REMOTE_HOST || "test.example.com",
+    remotePath: process.env.TEST_REMOTE_PATH || "/tmp/test",
+    port: parseInt(process.env.TEST_REMOTE_PORT) || 22,
   };
 
   // Test results
@@ -423,11 +423,20 @@ const path = require("path");
       verbose: false,
     });
 
-    // Mock connect to avoid actual SSH connection
-    deployer.ssh = {
-      connect: async () => {},
-      execCommand: async () => ({ code: 0 }),
-      dispose: () => {},
+    // Mock SSH connection BEFORE deploy() calls connect()
+    // Override the connect method to prevent actual SSH connection
+    const originalConnect = deployer.connect.bind(deployer);
+    deployer.connect = async () => {
+      // Mock successful connection
+      deployer.ssh = {
+        connect: async () => {},
+        execCommand: async () => ({ code: 0 }),
+        dispose: () => {},
+      };
+      // Simulate connection success
+      if (deployer.verbose) {
+        deployer.log("Mocked SSH connection", "blue");
+      }
     };
 
     const steps = [
