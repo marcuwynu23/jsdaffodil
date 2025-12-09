@@ -56,5 +56,8 @@
     "node-ssh": "^13.2.1",
     "ora": "^8.2.0",
     "tar": "^7.5.2"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3"
   }
 }

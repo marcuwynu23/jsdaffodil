@@ -1,3 +1,6 @@
 node_modules/
 .secrets
 !.secrets.example
+dist/
+.env
+!.env.example

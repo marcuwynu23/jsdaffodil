@@ -1,15 +1,27 @@
-// test.cjs for commonjs
+require('dotenv').config(); // Load .env at the top
 const { Daffodil } = require("../index.cjs");
 
+
+const remoteUser = process.env.REMOTE_USER || "user";
+const remoteHost = process.env.REMOTE_HOST || "ssh.server.com";
+const remotePath = process.env.REMOTE_PATH || "/user/test";
 const deployer = new Daffodil({
-  remoteUser: "deployer", // username of cloud server
-  remoteHost: "231.142.34.222", // replace this with actual working ip address of  vps or cloud server
-  remotePath: "/root/test", // target root
+  remoteUser,   // from .env
+  remoteHost,   // from .env
+  remotePath,   // from .env
 });
 
 const steps = [
-  { step: "list local directory.", command: () => deployer.runCommand("ls -a") },
-  { step: "List remote directory.", command: () => deployer.sshCommand("ls -a") },
+  { step: "List local directory.", command: () => deployer.runCommand("ls -a") },
+  { step: "Transfer files.", command: () => deployer.transferFiles("dist", "/root/test") },
 ];
 
-deployer.deploy(steps);
+// Wrap top-level await in an async IIFE
+(async () => {
+  try {
+    await deployer.deploy(steps);
+    console.log("Deployment finished successfully!");
+  } catch (err) {
+    console.error("Deployment failed:", err);
+  }
+})();

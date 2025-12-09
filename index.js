@@ -5,7 +5,33 @@ import fs from "fs-extra";
 import {NodeSSH} from "node-ssh";
 import ora from "ora";
 import path from "path";
-import tar from "tar";
+import * as tar from "tar";
+
+/**
+ * Custom error class for file/directory not found errors
+ */
+export class PathNotFoundError extends Error {
+  constructor(path, type = "path") {
+    const message = `The ${type} does not exist: ${path}\nPlease ensure the ${type} exists before attempting to transfer.`;
+    super(message);
+    this.name = "PathNotFoundError";
+    this.path = path;
+    this.type = type;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
+ * Custom error class for transfer-related errors
+ */
+export class TransferError extends Error {
+  constructor(message, originalError = null) {
+    super(message);
+    this.name = "TransferError";
+    this.originalError = originalError;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
 
 export class Daffodil {
   constructor({
@@ -103,6 +129,24 @@ export class Daffodil {
       `Transferring files from ${localPath} to ${destinationPath}`
     ).start();
 
+    // Validate local path exists before proceeding
+    if (!(await fs.pathExists(localPath))) {
+      spinner.fail(chalk.red("Transfer failed: Path does not exist"));
+      const isDirectory = localPath.endsWith(path.sep) || localPath.endsWith("/");
+      throw new PathNotFoundError(
+        localPath,
+        isDirectory ? "directory" : "file or directory"
+      );
+    }
+
+    // Check if path is a directory or file
+    const stats = await fs.stat(localPath);
+    const isDirectory = stats.isDirectory();
+    if (!isDirectory && !stats.isFile()) {
+      spinner.fail(chalk.red("Transfer failed: Path is not a file or directory"));
+      throw new PathNotFoundError(localPath, "file or directory");
+    }
+
     // Generate unique archive filename
     const archiveName = `daffodil_${Date.now()}.tar.gz`;
     const archivePath = path.join(process.cwd(), archiveName);
@@ -115,11 +159,13 @@ export class Daffodil {
       // Step 1: Create archive locally (cross-platform using tar npm package)
       spinner.text = chalk.blue("Creating archive...");
       
-      // Prepare exclude patterns for tar package
-      // The tar package filter receives paths relative to cwd
-      const baseDir = path.dirname(localPath);
+      // Prepare archive configuration
+      // For directories: archive contents directly (not the directory itself)
+      // For files: archive the file itself
+      const baseDir = isDirectory ? localPath : path.dirname(localPath);
       const baseName = path.basename(localPath);
       
+      // Build filter function for exclude patterns
       const filterFn =
         this.excludeList.length > 0
           ? (filePath) => {
@@ -162,6 +208,18 @@ export class Daffodil {
             }
           : undefined;
 
+      // Determine what to archive
+      // For directories: read directory contents and archive them directly
+      // For files: archive the file itself
+      let archiveEntries;
+      if (isDirectory) {
+        // Read directory contents to archive them directly (not the directory itself)
+        const entries = await fs.readdir(localPath);
+        archiveEntries = entries;
+      } else {
+        archiveEntries = [baseName];
+      }
+
       // Create tar.gz archive using cross-platform tar package
       try {
         await tar.create(
@@ -171,7 +229,7 @@ export class Daffodil {
             cwd: baseDir,
             filter: filterFn,
           },
-          [baseName]
+          archiveEntries
         );
       } catch (tarErr) {
         // If exclude filter fails, try without it
@@ -187,7 +245,7 @@ export class Daffodil {
               file: archivePath,
               cwd: baseDir,
             },
-            [baseName]
+            archiveEntries
           );
         } else {
           throw tarErr;
@@ -262,8 +320,28 @@ export class Daffodil {
         // Ignore cleanup errors
       }
 
-      spinner.fail(chalk.red(`Transfer failed: ${err.message}`));
-      throw err;
+      // Handle specific error types
+      if (err instanceof PathNotFoundError) {
+        spinner.fail(chalk.red(`Transfer failed: ${err.message}`));
+        throw err;
+      }
+
+      // Handle ENOENT errors (file/directory not found)
+      if (err.code === "ENOENT" || err.message?.includes("ENOENT")) {
+        const pathMatch = err.message?.match(/lstat ['"](.+?)['"]/);
+        const missingPath = pathMatch ? pathMatch[1] : localPath;
+        const pathNotFoundError = new PathNotFoundError(missingPath, "file or directory");
+        spinner.fail(chalk.red(`Transfer failed: ${pathNotFoundError.message}`));
+        throw pathNotFoundError;
+      }
+
+      // Handle other transfer errors
+      const transferError = new TransferError(
+        `Transfer failed: ${err.message}`,
+        err
+      );
+      spinner.fail(chalk.red(transferError.message));
+      throw transferError;
     }
   }
 

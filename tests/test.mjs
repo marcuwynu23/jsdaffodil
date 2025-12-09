@@ -1,15 +1,31 @@
 // test.mjs or test.js (ESM)
 import { Daffodil } from "../index.js";
+import dotenv from "dotenv";
+dotenv.config();
+// Read remote configuration from .env with defaults
+const remoteUser = process.env.REMOTE_USER || "user";
+const remoteHost = process.env.REMOTE_HOST || "ssh.server.com";
+const remotePath = process.env.REMOTE_PATH || "/user/test";
 
 const deployer = new Daffodil({
-  remoteUser: "deployer", // username of cloud server
-  remoteHost: "231.142.34.222", // replace this with actual working ip address of  vps or cloud server
-  remotePath: "/root/test", // target root
+  remoteUser,   // from .env
+  remoteHost,   // from .env
+  remotePath,   // from .env
 });
+
 
 const steps = [
   { step: "List local directory.", command: () => deployer.runCommand("ls -a") },
-  { step: "List remote directory.", command: () => deployer.sshCommand("ls -a") },
+ { step: "Transfer files.", command: () => deployer.transferFiles("s","/root/test") },
 ];
 
-await deployer.deploy(steps);
+// Wrap top-level await in an async IIFE
+(async () => {
+  try {
+    await deployer.deploy(steps);
+    console.log("Deployment finished successfully!");
+  } catch (err) {
+    console.error("Deployment failed:", err);
+  }
+})();
+
