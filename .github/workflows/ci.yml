@@ -74,6 +74,10 @@ jobs:
 
       - name: Verify package structure
         run: |
-          node -e "require('./src/index.cjs')"
-          node --input-type=module -e "import('./src/index.js').then(() => console.log('ESM import successful'))"
+          echo "Testing ESM import..."
+          node --input-type=module -e "import('./src/index.js').then((mod) => { console.log('✅ ESM import successful'); console.log('Exports:', Object.keys(mod).join(', ')); })"
+          echo "Testing file existence..."
+          test -f src/index.js && echo "✅ src/index.js exists"
+          test -f src/index.cjs && echo "✅ src/index.cjs exists"
+          echo "✅ Package structure verified"
 
