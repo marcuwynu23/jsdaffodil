@@ -2,16 +2,21 @@
   "name": "@marcuwynu23/jsdaffodil",
   "version": "1.1.2",
   "description": "Cross-platform deployment automation framework for Node.js with SSH, archive-based file transfer, and step-by-step task execution. Supports Windows, Linux, and macOS.",
-  "main": "index.js",
+  "main": "src/index.js",
   "exports": {
-    "import": "./index.js",
-    "require": "./index.cjs"
+    "import": "./src/index.js",
+    "require": "./src/index.cjs"
   },
   "type": "module",
   "scripts": {
-    "sample:common": "node samples/sample.cjs",
-    "sample:esm": "node samples/sample.mjs",
-    "sample": "npm run sample:common && npm run sample:esm"
+    "sample:common": "node src/samples/sample.cjs",
+    "sample:esm": "node src/samples/sample.mjs",
+    "sample": "npm run sample:common && npm run sample:esm",
+    "test:esm": "node src/tests/esm/test-daffodil.mjs",
+    "test:common": "node src/tests/commonjs/test-daffodil.cjs",
+    "test": "npm run test:esm && npm run test:common",
+    "format": "prettier --write \"src/**/*.{js,mjs,cjs,json,md}\" \"*.{js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,mjs,cjs,json,md}\" \"*.{js,json,md}\""
   },
   "keywords": [
     "deploy",
