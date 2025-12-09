@@ -5,6 +5,7 @@ import fs from "fs-extra";
 import {NodeSSH} from "node-ssh";
 import ora from "ora";
 import path from "path";
+import tar from "tar";
 
 export class Daffodil {
   constructor({
@@ -102,53 +103,167 @@ export class Daffodil {
       `Transferring files from ${localPath} to ${destinationPath}`
     ).start();
 
+    // Generate unique archive filename
+    const archiveName = `daffodil_${Date.now()}.tar.gz`;
+    const archivePath = path.join(process.cwd(), archiveName);
+    const remoteArchivePath = path.posix.join(
+      destinationPath,
+      archiveName
+    ).replace(/\\/g, "/");
+
     try {
-      const allFiles = [];
+      // Step 1: Create archive locally (cross-platform using tar npm package)
+      spinner.text = chalk.blue("Creating archive...");
+      
+      // Prepare exclude patterns for tar package
+      // The tar package filter receives paths relative to cwd
+      const baseDir = path.dirname(localPath);
+      const baseName = path.basename(localPath);
+      
+      const filterFn =
+        this.excludeList.length > 0
+          ? (filePath) => {
+              // tar filter receives path relative to cwd
+              // Normalize path separators for cross-platform compatibility
+              const normalizedPath = filePath.replace(/\\/g, "/");
+              const fileName = path.basename(filePath);
 
-      // Recursive directory walk
-      const walk = async (dir) => {
-        const entries = await fs.readdir(dir, {withFileTypes: true});
-        for (const entry of entries) {
-          if (this.excludeList.includes(entry.name)) continue;
+              // Check if any exclude pattern matches
+              return !this.excludeList.some((pattern) => {
+                const normalizedPattern = pattern.replace(/\\/g, "/");
+                
+                // Check filename match
+                if (fileName === pattern || fileName === normalizedPattern) {
+                  return true;
+                }
 
-          const fullLocalPath = path.join(dir, entry.name);
-          const relativePath = path.relative(localPath, fullLocalPath);
-          const remoteFullPath = path.posix
-            .join(destinationPath, relativePath)
-            .replace(/\\/g, "/");
+                // Check path match
+                if (
+                  normalizedPath.includes(normalizedPattern) ||
+                  normalizedPath.endsWith(normalizedPattern)
+                ) {
+                  return true;
+                }
 
-          if (entry.isDirectory()) {
-            // Safe mkdir: ignore if already exists
-            await this.ssh.execCommand(`mkdir -p "${remoteFullPath}" || true`);
-            await walk(fullLocalPath);
-          } else if (entry.isFile()) {
-            allFiles.push({local: fullLocalPath, remote: remoteFullPath});
-          }
+                // Support glob-like patterns
+                if (normalizedPattern.includes("*")) {
+                  const regex = new RegExp(
+                    "^" +
+                      normalizedPattern
+                        .replace(/\*/g, ".*")
+                        .replace(/\//g, "[\\\\/]") +
+                      "$"
+                  );
+                  return regex.test(normalizedPath);
+                }
+
+                return false;
+              });
+            }
+          : undefined;
+
+      // Create tar.gz archive using cross-platform tar package
+      try {
+        await tar.create(
+          {
+            gzip: true,
+            file: archivePath,
+            cwd: baseDir,
+            filter: filterFn,
+          },
+          [baseName]
+        );
+      } catch (tarErr) {
+        // If exclude filter fails, try without it
+        if (filterFn) {
+          console.log(
+            chalk.yellow(
+              "Retrying archive creation without exclude patterns..."
+            )
+          );
+          await tar.create(
+            {
+              gzip: true,
+              file: archivePath,
+              cwd: baseDir,
+            },
+            [baseName]
+          );
+        } else {
+          throw tarErr;
         }
-      };
+      }
 
-      await walk(localPath);
+      if (!(await fs.pathExists(archivePath))) {
+        throw new Error("Archive file was not created");
+      }
 
-      // Upload all files (overwrite existing)
-      const bar = new cliProgress.SingleBar(
+      const archiveStats = await fs.stat(archivePath);
+      const archiveSizeMB = (archiveStats.size / (1024 * 1024)).toFixed(2);
+      console.log(
+        chalk.blue(`Archive created: ${archiveName} (${archiveSizeMB} MB)`)
+      );
+
+      // Step 2: Transfer archive
+      spinner.text = chalk.blue("Transferring archive...");
+      const transferBar = new cliProgress.SingleBar(
         {},
         cliProgress.Presets.shades_classic
       );
-      bar.start(allFiles.length, 0);
+      transferBar.start(100, 0);
 
-      for (const {local, remote} of allFiles) {
-        // Explicitly remove file before upload to ensure overwrite
-        await this.ssh.execCommand(`rm -f "${remote}" || true`);
-        await this.ssh.putFile(local, remote);
-        bar.increment();
+      // Remove old archive if exists on remote
+      await this.ssh.execCommand(`rm -f "${remoteArchivePath}" || true`);
+
+      // Transfer the archive file
+      await this.ssh.putFile(archivePath, remoteArchivePath);
+      transferBar.update(100);
+      transferBar.stop();
+
+      console.log(chalk.blue(`Archive transferred to: ${remoteArchivePath}`));
+
+      // Step 3: Extract archive on remote server
+      spinner.text = chalk.blue("Extracting archive on remote server...");
+      
+      // Ensure destination directory exists
+      await this.ssh.execCommand(`mkdir -p "${destinationPath}" || true`);
+
+      // Extract archive (overwrite existing files)
+      const extractResult = await this.ssh.execCommand(
+        `cd "${destinationPath}" && tar -xzf "${remoteArchivePath}" && rm -f "${remoteArchivePath}"`
+      );
+
+      if (extractResult.code !== 0) {
+        throw new Error(
+          `Failed to extract archive: ${extractResult.stderr || extractResult.stdout}`
+        );
       }
 
-      bar.stop();
+      // Step 4: Clean up local archive
+      if (await fs.pathExists(archivePath)) {
+        await fs.remove(archivePath);
+        console.log(chalk.blue(`Cleaned up local archive: ${archiveName}`));
+      }
+
       spinner.succeed(
-        chalk.green("Transfer complete (subfolders + overwrite)")
+        chalk.green("Transfer complete (archive method)")
       );
     } catch (err) {
+      // Clean up local archive on error
+      if (await fs.pathExists(archivePath)) {
+        await fs.remove(archivePath);
+        console.log(chalk.yellow(`Cleaned up local archive after error`));
+      }
+
+      // Clean up remote archive on error
+      try {
+        await this.ssh.execCommand(`rm -f "${remoteArchivePath}" || true`);
+      } catch (cleanupErr) {
+        // Ignore cleanup errors
+      }
+
       spinner.fail(chalk.red(`Transfer failed: ${err.message}`));
+      throw err;
     }
   }
 
