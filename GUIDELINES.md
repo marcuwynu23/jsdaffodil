@@ -86,12 +86,12 @@ deployer.deploy(steps).catch(console.error);
 
 ```javascript
 const deployer = new Daffodil({
-  remoteUser: "string",        // Required: SSH username
-  remoteHost: "string",        // Required: Server hostname or IP
-  remotePath: "string",        // Optional: Default remote path (default: ".")
-  port: number,                // Optional: SSH port (default: 22)
-  ignoreFile: "string",        // Optional: Ignore file path (default: ".scpignore")
-  verbose: boolean,            // Optional: Enable verbose logging (default: false)
+  remoteUser: "string", // Required: SSH username
+  remoteHost: "string", // Required: Server hostname or IP
+  remotePath: "string", // Optional: Default remote path (default: ".")
+  port: number, // Optional: SSH port (default: 22)
+  ignoreFile: "string", // Optional: Ignore file path (default: ".scpignore")
+  verbose: boolean, // Optional: Enable verbose logging (default: false)
 });
 ```
 
@@ -138,6 +138,7 @@ await deployer.transferFiles("./dist");
 ```
 
 **Features:**
+
 - Automatic tar.gz compression
 - Efficient single-file transfer
 - Automatic remote extraction
@@ -153,7 +154,9 @@ Execute commands on remote servers:
 await deployer.sshCommand("ls -la /var/www");
 
 // Complex command with chaining
-await deployer.sshCommand("cd /var/www/myapp && npm install && pm2 restart myapp");
+await deployer.sshCommand(
+  "cd /var/www/myapp && npm install && pm2 restart myapp"
+);
 
 // Command with output
 await deployer.sshCommand("cat /etc/os-release");
@@ -201,7 +204,8 @@ const steps = [
   },
   {
     step: "Install dependencies",
-    command: () => deployer.sshCommand("cd /var/www/myapp && npm install --production"),
+    command: () =>
+      deployer.sshCommand("cd /var/www/myapp && npm install --production"),
   },
   {
     step: "Run migrations",
@@ -233,6 +237,7 @@ deployer.setOption({ verbose: true });
 ```
 
 **Example Output:**
+
 ```
 [2025-12-09T12:33:53.930Z] Starting deployment with 3 step(s)
 [2025-12-09T12:33:53.931Z] Attempting SSH connection to 192.168.1.100:22
@@ -300,15 +305,25 @@ const steps = [
     },
   },
   // Only run migrations in production
-  ...(process.env.NODE_ENV === "production" ? [{
-    step: "Run migrations",
-    command: () => deployer.sshCommand("cd /var/www/myapp && npm run migrate"),
-  }] : []),
+  ...(process.env.NODE_ENV === "production"
+    ? [
+        {
+          step: "Run migrations",
+          command: () =>
+            deployer.sshCommand("cd /var/www/myapp && npm run migrate"),
+        },
+      ]
+    : []),
   // Conditional step based on feature flag
-  ...(process.env.ENABLE_CACHE_CLEAR === "true" ? [{
-    step: "Clear cache",
-    command: () => deployer.sshCommand("cd /var/www/myapp && npm run cache:clear"),
-  }] : []),
+  ...(process.env.ENABLE_CACHE_CLEAR === "true"
+    ? [
+        {
+          step: "Clear cache",
+          command: () =>
+            deployer.sshCommand("cd /var/www/myapp && npm run cache:clear"),
+        },
+      ]
+    : []),
 ];
 ```
 
@@ -322,12 +337,12 @@ try {
   console.log("✅ Deployment successful!");
 } catch (error) {
   console.error("❌ Deployment failed:", error.message);
-  
+
   // With verbose mode, you get detailed error information
   if (deployer.verbose) {
     console.error("Full error details:", error);
   }
-  
+
   process.exit(1);
 }
 ```
@@ -486,11 +501,15 @@ const steps = [
   },
   {
     step: "Install backend dependencies",
-    command: () => deployer.sshCommand("cd /var/www/app/backend && npm install --production"),
+    command: () =>
+      deployer.sshCommand(
+        "cd /var/www/app/backend && npm install --production"
+      ),
   },
   {
     step: "Run database migrations",
-    command: () => deployer.sshCommand("cd /var/www/app/backend && npm run migrate"),
+    command: () =>
+      deployer.sshCommand("cd /var/www/app/backend && npm run migrate"),
   },
   {
     step: "Restart services",
@@ -498,7 +517,8 @@ const steps = [
   },
   {
     step: "Verify deployment",
-    command: () => deployer.sshCommand("curl -f http://localhost:3000/health || exit 1"),
+    command: () =>
+      deployer.sshCommand("curl -f http://localhost:3000/health || exit 1"),
   },
 ];
 
@@ -537,7 +557,8 @@ const steps = [
   },
   {
     step: "Deploy",
-    command: () => deployer.sshCommand(`cd ${process.env.CI_DEPLOY_PATH} && ./deploy.sh`),
+    command: () =>
+      deployer.sshCommand(`cd ${process.env.CI_DEPLOY_PATH} && ./deploy.sh`),
   },
 ];
 
@@ -556,6 +577,7 @@ deployer.deploy(steps).catch((error) => {
 **Problem**: "All configured authentication methods failed"
 
 **Solutions**:
+
 - Verify SSH key is in `~/.ssh/` (or `%USERPROFILE%\.ssh\` on Windows)
 - Ensure public key is added to server: `ssh-copy-id user@host`
 - Test connection manually: `ssh user@host`
@@ -566,6 +588,7 @@ deployer.deploy(steps).catch((error) => {
 **Problem**: "Connection timeout"
 
 **Solutions**:
+
 - Verify server is accessible: `ping host`
 - Check firewall settings
 - Verify SSH port (default: 22)
@@ -576,6 +599,7 @@ deployer.deploy(steps).catch((error) => {
 **Problem**: "Transfer failed: Path does not exist"
 
 **Solutions**:
+
 - Verify local path exists
 - Check file permissions
 - Ensure destination directory exists on remote
@@ -586,6 +610,7 @@ deployer.deploy(steps).catch((error) => {
 **Problem**: "Permission denied"
 
 **Solutions**:
+
 - Verify SSH user has write permissions
 - Check remote directory permissions
 - Ensure user has access to destination path
@@ -593,16 +618,19 @@ deployer.deploy(steps).catch((error) => {
 ### Debugging Tips
 
 1. **Enable Verbose Mode**:
+
    ```javascript
    deployer.setOption({ verbose: true });
    ```
 
 2. **Test SSH Connection**:
+
    ```bash
    ssh user@host
    ```
 
 3. **Test File Transfer Manually**:
+
    ```bash
    scp -r ./dist user@host:/var/www/app
    ```
@@ -631,4 +659,3 @@ If you encounter issues:
 ---
 
 Happy deploying! 🌼
-

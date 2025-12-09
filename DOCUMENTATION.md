@@ -146,24 +146,24 @@ The main module exports:
 export class Daffodil {
   // Constructor
   constructor({ remoteUser, remoteHost, remotePath, port, ignoreFile, verbose })
-  
+
   // Configuration
   setOption({ verbose })
-  
+
   // Connection
   async connect()
-  
+
   // File Operations
   async transferFiles(localPath, destinationPath)
   async makeDirectory(dirName)
-  
+
   // Command Execution
   async runCommand(cmd)
   async sshCommand(cmd)
-  
+
   // Deployment
   async deploy(steps)
-  
+
   // Internal Helpers
   loadIgnoreList()
   getTimestamp()
@@ -181,11 +181,13 @@ export class Daffodil {
 **Location**: `connect()` method
 
 **Responsibilities**:
+
 - SSH key detection and selection
 - Connection establishment
 - Remote path verification
 
 **Key Features**:
+
 - Automatic key type detection (id_rsa, id_ed25519, id_ecdsa, id_dsa)
 - Fallback mechanism for multiple keys
 - Connection error handling
@@ -206,6 +208,7 @@ async connect() {
 **Location**: `transferFiles()` method
 
 **Responsibilities**:
+
 - Archive creation (tar.gz)
 - File transfer via SSH
 - Remote extraction
@@ -222,6 +225,7 @@ async connect() {
 ```
 
 **Key Features**:
+
 - Cross-platform archive creation
 - Ignore pattern support (.scpignore)
 - Automatic cleanup
@@ -233,12 +237,14 @@ async connect() {
 **Location**: `log()`, `logError()`, `logTimeConsumption()` methods
 
 **Features**:
+
 - Verbose mode with timestamps
 - Time consumption tracking
 - Human-readable error messages
 - Color-coded output
 
 **Verbose Mode**:
+
 - When `verbose: true`: Full technical details
 - When `verbose: false`: Human-readable messages
 
@@ -272,6 +278,7 @@ try {
 **Location**: `deploy()` method
 
 **Responsibilities**:
+
 - Sequential step execution
 - Error handling and abort
 - Progress tracking
@@ -327,9 +334,12 @@ const deployer = new Daffodil({
 });
 
 const steps = [
-  { step: "Sample step", command: async () => {
-    // Sample implementation
-  }},
+  {
+    step: "Sample step",
+    command: async () => {
+      // Sample implementation
+    },
+  },
 ];
 
 (async () => {
@@ -357,7 +367,7 @@ The `index.cjs` file provides CommonJS compatibility:
 
 ```javascript
 // index.cjs
-module.exports = require('./index.js');
+module.exports = require("./index.js");
 ```
 
 ### Package Configuration
@@ -366,11 +376,11 @@ Key `package.json` fields:
 
 ```json
 {
-  "type": "module",           // ESM by default
-  "main": "index.js",         // Main entry
+  "type": "module", // ESM by default
+  "main": "index.js", // Main entry
   "exports": {
-    "import": "./index.js",   // ESM import
-    "require": "./index.cjs"  // CommonJS require
+    "import": "./index.js", // ESM import
+    "require": "./index.cjs" // CommonJS require
   }
 }
 ```
@@ -399,11 +409,11 @@ To add new functionality:
 ```javascript
 async newMethod(param1, param2) {
   const startTime = Date.now();
-  
+
   if (this.verbose) {
     this.log(`Starting new operation`, "blue");
   }
-  
+
   try {
     // Implementation
     this.logTimeConsumption("New operation", startTime);
@@ -621,4 +631,3 @@ If you have questions about development:
 ---
 
 Happy coding! 🌼
-

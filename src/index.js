@@ -1,8 +1,8 @@
 import chalk from "chalk";
-import {execSync} from "child_process";
+import { execSync } from "child_process";
 import cliProgress from "cli-progress";
 import fs from "fs-extra";
-import {NodeSSH} from "node-ssh";
+import { NodeSSH } from "node-ssh";
 import ora from "ora";
 import path from "path";
 import * as tar from "tar";
@@ -120,7 +120,10 @@ export class Daffodil {
     }
 
     // Handle SSH authentication errors
-    if (error.message && error.message.includes("All configured authentication methods failed")) {
+    if (
+      error.message &&
+      error.message.includes("All configured authentication methods failed")
+    ) {
       return "SSH connection failed: Authentication failed. Please check your SSH keys and credentials.";
     }
 
@@ -160,7 +163,9 @@ export class Daffodil {
       console.error(chalk.red(`[${timestamp}] ${message}`));
       if (error) {
         console.error(chalk.red(`  Error Name: ${error.name || "Unknown"}`));
-        console.error(chalk.red(`  Error Message: ${error.message || "No message"}`));
+        console.error(
+          chalk.red(`  Error Message: ${error.message || "No message"}`)
+        );
         if (error.code) {
           console.error(chalk.red(`  Error Code: ${error.code}`));
         }
@@ -168,12 +173,18 @@ export class Daffodil {
           console.error(chalk.red(`  Stack Trace:\n${error.stack}`));
         }
         if (error.originalError) {
-          console.error(chalk.red(`  Original Error: ${error.originalError.message || error.originalError}`));
+          console.error(
+            chalk.red(
+              `  Original Error: ${error.originalError.message || error.originalError}`
+            )
+          );
         }
       }
     } else {
       // Show human-readable error message when not verbose
-      const humanReadableMsg = error ? this.getHumanReadableError(error) : message;
+      const humanReadableMsg = error
+        ? this.getHumanReadableError(error)
+        : message;
       console.error(chalk.red(message));
       console.error(chalk.red(`  ${humanReadableMsg}`));
     }
@@ -189,7 +200,9 @@ export class Daffodil {
       const endTime = Date.now();
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       const timestamp = this.getTimestamp();
-      console.log(chalk.cyan(`[${timestamp}] ${operation} completed in ${duration}s`));
+      console.log(
+        chalk.cyan(`[${timestamp}] ${operation} completed in ${duration}s`)
+      );
     }
   }
 
@@ -201,7 +214,10 @@ export class Daffodil {
     const failures = [];
 
     if (this.verbose) {
-      this.log(`Attempting SSH connection to ${this.remoteHost}:${this.port}`, "blue");
+      this.log(
+        `Attempting SSH connection to ${this.remoteHost}:${this.port}`,
+        "blue"
+      );
       this.log(`Trying SSH keys from: ${homeDir}\\.ssh`, "blue");
     }
 
@@ -223,14 +239,13 @@ export class Daffodil {
 
           const ensurePath = path.posix.resolve(this.remotePath);
           await this.ssh.execCommand(`mkdir -p ${ensurePath}`);
-          this.log(
-            `Verified or created remote path: ${ensurePath}`,
-            "blue"
-          );
+          this.log(`Verified or created remote path: ${ensurePath}`, "blue");
           return; // ✅ Success, skip remaining
         } catch (err) {
-          const errorMsg = this.verbose ? err.message : this.getHumanReadableError(err);
-          failures.push({key: keyFile, error: errorMsg});
+          const errorMsg = this.verbose
+            ? err.message
+            : this.getHumanReadableError(err);
+          failures.push({ key: keyFile, error: errorMsg });
           if (this.verbose) {
             this.logError(`Failed to connect with key ${keyFile}`, err);
           }
@@ -240,7 +255,7 @@ export class Daffodil {
 
     // ❌ All keys failed
     spinner.fail(chalk.red("Connection failed: No valid SSH keys worked."));
-    
+
     if (this.verbose) {
       this.logError("Connection failed: No valid SSH keys worked.");
       console.error(chalk.red("Tried the following keys:"));
@@ -249,9 +264,11 @@ export class Daffodil {
       });
     } else {
       console.error(chalk.red("SSH connection failed: Authentication failed."));
-      console.error(chalk.red("Please ensure your SSH keys are properly configured."));
+      console.error(
+        chalk.red("Please ensure your SSH keys are properly configured.")
+      );
     }
-    
+
     process.exit(1);
   }
 
@@ -265,11 +282,14 @@ export class Daffodil {
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line && !line.startsWith("#"));
-    
+
     if (this.verbose && excludeList.length > 0) {
-      this.log(`Loaded ${excludeList.length} exclude pattern(s) from ${this.ignoreFile}`, "blue");
+      this.log(
+        `Loaded ${excludeList.length} exclude pattern(s) from ${this.ignoreFile}`,
+        "blue"
+      );
     }
-    
+
     return excludeList;
   }
 
@@ -279,7 +299,7 @@ export class Daffodil {
       this.log(`Executing local command: ${cmd}`, "blue");
     }
     try {
-      const output = execSync(cmd, {stdio: "pipe"}); // changed from 'inherit' to 'pipe'
+      const output = execSync(cmd, { stdio: "pipe" }); // changed from 'inherit' to 'pipe'
       const result = output?.toString() || "";
       console.log(result);
       this.logTimeConsumption(`Local command: ${cmd}`, startTime);
@@ -327,15 +347,19 @@ export class Daffodil {
     const spinner = ora(
       `Transferring files from ${localPath} to ${destinationPath}`
     ).start();
-    
+
     if (this.verbose) {
-      this.log(`Starting file transfer from ${localPath} to ${destinationPath}`, "blue");
+      this.log(
+        `Starting file transfer from ${localPath} to ${destinationPath}`,
+        "blue"
+      );
     }
 
     // Validate local path exists before proceeding
     if (!(await fs.pathExists(localPath))) {
       spinner.fail(chalk.red("Transfer failed: Path does not exist"));
-      const isDirectory = localPath.endsWith(path.sep) || localPath.endsWith("/");
+      const isDirectory =
+        localPath.endsWith(path.sep) || localPath.endsWith("/");
       const error = new PathNotFoundError(
         localPath,
         isDirectory ? "directory" : "file or directory"
@@ -352,14 +376,22 @@ export class Daffodil {
     const isDirectory = stats.isDirectory();
     if (this.verbose) {
       this.log(`Path type: ${isDirectory ? "directory" : "file"}`, "blue");
-      this.log(`Path size: ${(stats.size / (1024 * 1024)).toFixed(2)} MB`, "blue");
+      this.log(
+        `Path size: ${(stats.size / (1024 * 1024)).toFixed(2)} MB`,
+        "blue"
+      );
     }
     if (!isDirectory && !stats.isFile()) {
-      spinner.fail(chalk.red("Transfer failed: Path is not a file or directory"));
+      spinner.fail(
+        chalk.red("Transfer failed: Path is not a file or directory")
+      );
       const error = new PathNotFoundError(localPath, "file or directory");
       // Only log detailed error in verbose mode
       if (this.verbose) {
-        this.logError("Transfer failed: Path is not a file or directory", error);
+        this.logError(
+          "Transfer failed: Path is not a file or directory",
+          error
+        );
       }
       throw error;
     }
@@ -367,22 +399,21 @@ export class Daffodil {
     // Generate unique archive filename
     const archiveName = `daffodil_${Date.now()}.tar.gz`;
     const archivePath = path.join(process.cwd(), archiveName);
-    const remoteArchivePath = path.posix.join(
-      destinationPath,
-      archiveName
-    ).replace(/\\/g, "/");
+    const remoteArchivePath = path.posix
+      .join(destinationPath, archiveName)
+      .replace(/\\/g, "/");
 
     try {
       // Step 1: Create archive locally (cross-platform using tar npm package)
       const archiveStartTime = Date.now();
       spinner.text = chalk.blue("Creating archive...");
-      
+
       // Prepare archive configuration
       // For directories: archive contents directly (not the directory itself)
       // For files: archive the file itself
       const baseDir = isDirectory ? localPath : path.dirname(localPath);
       const baseName = path.basename(localPath);
-      
+
       if (this.verbose) {
         this.log("Step 1: Creating archive locally", "blue");
         this.log(`Base directory: ${baseDir}`, "blue");
@@ -390,7 +421,7 @@ export class Daffodil {
           this.log(`Exclude patterns: ${this.excludeList.join(", ")}`, "blue");
         }
       }
-      
+
       // Build filter function for exclude patterns
       const filterFn =
         this.excludeList.length > 0
@@ -403,7 +434,7 @@ export class Daffodil {
               // Check if any exclude pattern matches
               return !this.excludeList.some((pattern) => {
                 const normalizedPattern = pattern.replace(/\\/g, "/");
-                
+
                 // Check filename match
                 if (fileName === pattern || fileName === normalizedPattern) {
                   return true;
@@ -445,7 +476,7 @@ export class Daffodil {
       } else {
         archiveEntries = [baseName];
       }
-      
+
       if (this.verbose) {
         this.log(`Archive entries: ${archiveEntries.length}`, "blue");
       }
@@ -488,22 +519,19 @@ export class Daffodil {
 
       const archiveStats = await fs.stat(archivePath);
       const archiveSizeMB = (archiveStats.size / (1024 * 1024)).toFixed(2);
-      this.log(
-        `Archive created: ${archiveName} (${archiveSizeMB} MB)`,
-        "blue"
-      );
+      this.log(`Archive created: ${archiveName} (${archiveSizeMB} MB)`, "blue");
       this.logTimeConsumption("Archive creation", archiveStartTime);
 
       // Step 2: Transfer archive
       const fileTransferStartTime = Date.now();
       spinner.text = chalk.blue("Transferring archive...");
-      
+
       if (this.verbose) {
         this.log("Step 2: Transferring archive to remote server", "blue");
         this.log(`Local archive: ${archivePath}`, "blue");
         this.log(`Remote archive: ${remoteArchivePath}`, "blue");
       }
-      
+
       const transferBar = new cliProgress.SingleBar(
         {},
         cliProgress.Presets.shades_classic
@@ -527,12 +555,12 @@ export class Daffodil {
       // Step 3: Extract archive on remote server
       const extractStartTime = Date.now();
       spinner.text = chalk.blue("Extracting archive on remote server...");
-      
+
       if (this.verbose) {
         this.log("Step 3: Extracting archive on remote server", "blue");
         this.log(`Destination path: ${destinationPath}`, "blue");
       }
-      
+
       // Ensure destination directory exists
       await this.ssh.execCommand(`mkdir -p "${destinationPath}" || true`);
 
@@ -557,7 +585,7 @@ export class Daffodil {
         }
         throw error;
       }
-      
+
       this.logTimeConsumption("Archive extraction", extractStartTime);
 
       // Step 4: Clean up local archive
@@ -566,9 +594,7 @@ export class Daffodil {
         this.log(`Cleaned up local archive: ${archiveName}`, "blue");
       }
 
-      spinner.succeed(
-        chalk.green("Transfer complete (archive method)")
-      );
+      spinner.succeed(chalk.green("Transfer complete (archive method)"));
       this.logTimeConsumption("Total file transfer", transferStartTime);
     } catch (err) {
       // Clean up local archive on error
@@ -604,8 +630,13 @@ export class Daffodil {
       if (err.code === "ENOENT" || err.message?.includes("ENOENT")) {
         const pathMatch = err.message?.match(/lstat ['"](.+?)['"]/);
         const missingPath = pathMatch ? pathMatch[1] : localPath;
-        const pathNotFoundError = new PathNotFoundError(missingPath, "file or directory");
-        spinner.fail(chalk.red(`Transfer failed: ${pathNotFoundError.message}`));
+        const pathNotFoundError = new PathNotFoundError(
+          missingPath,
+          "file or directory"
+        );
+        spinner.fail(
+          chalk.red(`Transfer failed: ${pathNotFoundError.message}`)
+        );
         // Only log detailed error in verbose mode
         if (this.verbose) {
           this.logError("Transfer failed: ENOENT error", pathNotFoundError);
@@ -632,21 +663,21 @@ export class Daffodil {
     if (this.verbose) {
       this.log(`Starting deployment with ${steps.length} step(s)`, "blue");
     }
-    
+
     await this.connect();
-    
+
     let failedStep = null;
     let failedError = null;
-    
+
     for (let i = 0; i < steps.length; i++) {
       const stepStartTime = Date.now();
-      const {step, command} = steps[i];
+      const { step, command } = steps[i];
       console.log(chalk.yellow(`Step ${i + 1}: ${step}`));
-      
+
       if (this.verbose) {
         this.log(`Executing step ${i + 1}: ${step}`, "yellow");
       }
-      
+
       try {
         await command();
         this.logTimeConsumption(`Step ${i + 1}: ${step}`, stepStartTime);
@@ -665,15 +696,15 @@ export class Daffodil {
         break; // Stop execution on first failure
       }
     }
-    
+
     // Always dispose SSH connection
     this.ssh.dispose();
-    
+
     // If a step failed, throw error to abort deployment
     if (failedStep) {
       this.logTimeConsumption("Total deployment (FAILED)", deployStartTime);
       console.error(chalk.red("✖ Deployment aborted due to step failure."));
-      
+
       // When verbose is false, suppress stack trace and use simple message
       if (this.verbose) {
         const errorMsg = failedError.message;
@@ -689,14 +720,14 @@ export class Daffodil {
           true // Suppress stack trace
         );
         // Override stack to prevent Node.js from printing it
-        Object.defineProperty(deploymentError, 'stack', {
+        Object.defineProperty(deploymentError, "stack", {
           get: () => deploymentError.message,
-          configurable: true
+          configurable: true,
         });
         throw deploymentError;
       }
     }
-    
+
     // Only show success if all steps completed
     console.log(chalk.green("? Deployment finished."));
     this.logTimeConsumption("Total deployment", deployStartTime);

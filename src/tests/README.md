@@ -44,6 +44,7 @@ node tests/commonjs/test-daffodil.cjs
 The test suite covers:
 
 ### Core Functionality
+
 - ✅ Constructor with various configurations
 - ✅ `setOption()` method
 - ✅ `getTimestamp()` method
@@ -52,6 +53,7 @@ The test suite covers:
 - ✅ `log()` method with verbose mode
 
 ### Error Handling
+
 - ✅ `PathNotFoundError` class
 - ✅ `TransferError` class
 - ✅ `DeploymentError` class
@@ -59,6 +61,7 @@ The test suite covers:
 - ✅ Error message formatting for different error types
 
 ### Methods (Existence and Callability)
+
 - ✅ `runCommand()` method
 - ✅ `sshCommand()` method
 - ✅ `makeDirectory()` method
@@ -66,11 +69,13 @@ The test suite covers:
 - ✅ `deploy()` method
 
 ### Verbose Mode
+
 - ✅ Logging with timestamps when verbose is true
 - ✅ Logging without timestamps when verbose is false
 - ✅ Error handling in verbose and non-verbose modes
 
 ### Integration Tests
+
 - ✅ `transferFiles()` throws `PathNotFoundError` for non-existent paths
 - ✅ `deploy()` throws `DeploymentError` when steps fail
 
@@ -119,4 +124,3 @@ test("Async test name", async () => {
   }
 });
 ```
-

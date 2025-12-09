@@ -37,6 +37,7 @@ This project includes comprehensive documentation:
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Contribution guidelines, code review process, and collaboration best practices.
 
 For quick examples, check the `samples/` directory:
+
 - `samples/sample.mjs` - ESM module example
 - `samples/sample.cjs` - CommonJS module example
 
@@ -143,6 +144,7 @@ Transfers files from local directory to remote server using archive-based compre
 - **`destinationPath`** (string, optional): Remote destination path (defaults to `remotePath`)
 
 **Features:**
+
 - Creates tar.gz archive locally (cross-platform)
 - Transfers single archive file for efficiency
 - Automatically extracts on remote server
@@ -187,6 +189,7 @@ JSDaffodil uses an efficient archive-based transfer method:
 4. **Automatic Cleanup** - Both local and remote archives are cleaned up after successful transfer
 
 This approach is especially beneficial for:
+
 - Large projects with many files
 - Slow network connections
 - Reducing SSH connection overhead
@@ -302,10 +305,14 @@ const steps = [
     step: "Run migrations",
     command: () => deployer.sshCommand("cd /var/www/myapp && npm run migrate"),
   },
-  ...(process.env.NODE_ENV === "production" ? [{
-    step: "Restart production server",
-    command: () => deployer.sshCommand("pm2 restart myapp"),
-  }] : []),
+  ...(process.env.NODE_ENV === "production"
+    ? [
+        {
+          step: "Restart production server",
+          command: () => deployer.sshCommand("pm2 restart myapp"),
+        },
+      ]
+    : []),
 ];
 ```
 
@@ -313,13 +320,13 @@ const steps = [
 
 ## 🔧 Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `remoteUser` | `string` | **Required** | SSH username for remote server |
-| `remoteHost` | `string` | **Required** | Remote server hostname or IP address |
-| `remotePath` | `string` | `"."` | Default remote directory path |
-| `port` | `number` | `22` | SSH port number |
-| `ignoreFile` | `string` | `".scpignore"` | Path to ignore patterns file |
+| Option       | Type     | Default        | Description                          |
+| ------------ | -------- | -------------- | ------------------------------------ |
+| `remoteUser` | `string` | **Required**   | SSH username for remote server       |
+| `remoteHost` | `string` | **Required**   | Remote server hostname or IP address |
+| `remotePath` | `string` | `"."`          | Default remote directory path        |
+| `port`       | `number` | `22`           | SSH port number                      |
+| `ignoreFile` | `string` | `".scpignore"` | Path to ignore patterns file         |
 
 ---
 

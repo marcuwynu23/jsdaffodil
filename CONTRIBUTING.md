@@ -67,6 +67,7 @@ git commit -m "test: add tests for error handling"
 ```
 
 **Commit Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -82,6 +83,7 @@ git push origin feature/your-feature-name
 ```
 
 Then create a Pull Request on GitHub with:
+
 - Clear description of changes
 - Reference to related issues
 - Screenshots/examples if applicable
@@ -179,6 +181,7 @@ When contributing:
 ## 🏆 Recognition
 
 Contributors will be:
+
 - Listed in the project README (if desired)
 - Credited in release notes
 - Appreciated by the community!
@@ -203,4 +206,3 @@ If you have questions:
 ---
 
 Thank you for contributing to JSDaffodil! 🌼
-
