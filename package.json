@@ -1,7 +1,7 @@
 {
   "name": "@marcuwynu23/jsdaffodil",
   "version": "1.1.0",
-  "description": "A deploy automation framework like pydaffodil, built in Node.js",
+  "description": "Cross-platform deployment automation framework for Node.js with SSH, archive-based file transfer, and step-by-step task execution. Supports Windows, Linux, and macOS.",
   "main": "index.js",
   "exports": {
     "import": "./index.js",
@@ -15,14 +15,39 @@
   },
   "keywords": [
     "deploy",
+    "deployment",
     "ssh",
     "automation",
+    "ci-cd",
+    "devops",
+    "file-transfer",
+    "scp",
+    "remote-deployment",
+    "server-deployment",
+    "cross-platform",
+    "windows",
+    "linux",
+    "macos",
+    "archive",
+    "tar",
     "jsdaffodil",
-    "pydaffodil"
+    "pydaffodil",
+    "nodejs",
+    "node-ssh",
+    "deployment-tool",
+    "deployment-automation"
   ],
   "author": "Mark Wayne B. Menorca",
   "publisher": "Mark Wayne B. Menorca",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcuwynu23/jsdaffodil.git"
+  },
+  "homepage": "https://github.com/marcuwynu23/jsdaffodil#readme",
+  "bugs": {
+    "url": "https://github.com/marcuwynu23/jsdaffodil/issues"
+  },
   "dependencies": {
     "chalk": "^5.3.0",
     "cli-progress": "^3.12.0",
