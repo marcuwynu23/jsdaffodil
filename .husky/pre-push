@@ -1,19 +1,12 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# Husky v10+ pre-push hook (no husky.sh shim)
 
-# Get the remote branch being pushed to
-remote="$1"
-url="$2"
-
-# Check if any tags are being pushed
+# Read refs from stdin and detect tag pushes
 while read local_ref local_sha remote_ref remote_sha
 do
-  # Check if this is a tag push
   if [[ "$local_ref" =~ ^refs/tags/ ]]; then
     echo "🔄 Tag detected! Updating CHANGELOG.md..."
     npm run changelog
-    
-    # Check if CHANGELOG was modified
+
     if git diff --quiet CHANGELOG.md; then
       echo "✅ CHANGELOG.md is up to date"
     else
