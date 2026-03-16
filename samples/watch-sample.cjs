@@ -31,7 +31,7 @@ require("dotenv").config(); // Load .env at the top
     },
     {
       step: "Restart app",
-      command: () => deployer.ssh("pm2 restart myapp"),
+      command: () => deployer.sshCommand("pm2 restart myapp"),
     },
   ];
 
@@ -61,4 +61,3 @@ require("dotenv").config(); // Load .env at the top
     process.exit(1);
   }
 })();
-

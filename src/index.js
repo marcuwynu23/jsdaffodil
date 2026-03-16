@@ -891,16 +891,15 @@ export class Daffodil {
           )
         );
 
-        const child = new Daffodil({
-          remoteUser: target.user,
-          remoteHost: target.host,
-          remotePath: this.remotePath,
-          port: target.port || this.port || 22,
-          ignoreFile: this.ignoreFile,
-          verbose: this.verbose,
-        });
+        // Reuse this instance for each host so user-defined step
+        // callbacks that reference the deployer (e.g. deployer.ssh)
+        // continue to work as expected.
+        this.remoteUser = target.user;
+        this.remoteHost = target.host;
+        this.port = target.port || this.port || 22;
+        this.ssh = new NodeSSH();
 
-        await child._deploySingle(steps);
+        await this._deploySingle(steps);
 
         console.log(
           chalk.cyan(

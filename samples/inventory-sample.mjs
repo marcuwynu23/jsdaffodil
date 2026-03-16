@@ -30,11 +30,13 @@ const steps = [
   {
     step: "Install dependencies",
     command: () =>
-      deployer.ssh("cd /var/www/myapp && npm install --production=false"),
+      deployer.sshCommand(
+        "cd /var/www/myapp && npm install --production=false"
+      ),
   },
   {
     step: "Restart application",
-    command: () => deployer.ssh("pm2 restart myapp"),
+    command: () => deployer.sshCommand("pm2 restart myapp"),
   },
 ];
 
@@ -47,4 +49,3 @@ const steps = [
     process.exit(1);
   }
 })();
-

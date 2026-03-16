@@ -43,4 +43,3 @@ require("dotenv").config(); // Load .env at the top
     }
   }
 })();
-

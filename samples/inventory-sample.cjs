@@ -7,7 +7,7 @@ require("dotenv").config();
   const deployer = new Daffodil({
     inventory: process.env.INVENTORY_PATH || "./inventory.ini",
     group: process.env.INVENTORY_GROUP || "webservers",
-    remotePath: process.env.REMOTE_PATH || "/var/www/myapp",
+    remotePath: process.env.REMOTE_PATH || "/",
   });
 
   deployer.setOption({
@@ -15,19 +15,18 @@ require("dotenv").config();
   });
 
   const steps = [
-    {
-      step: "Transfer application files",
-      command: () => deployer.transferFiles("./dist"),
-    },
+    // {
+    //   step: "Transfer application files",
+    //   command: () => deployer.transferFiles("./dist"),
+    // },
     {
       step: "Install dependencies",
-      command: () =>
-        deployer.ssh("cd /var/www/myapp && npm install --production=false"),
+      command: () => deployer.sshCommand("ls"),
     },
-    {
-      step: "Restart application",
-      command: () => deployer.ssh("pm2 restart myapp"),
-    },
+    // {
+    //   step: "Restart application",
+    //   command: () => deployer.ssh("pm2 restart myapp"),
+    // },
   ];
 
   try {
@@ -38,4 +37,3 @@ require("dotenv").config();
     process.exit(1);
   }
 })();
-

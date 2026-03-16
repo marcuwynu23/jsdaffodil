@@ -32,7 +32,7 @@ const steps = [
   },
   {
     step: "Restart app",
-    command: () => deployer.ssh(`pm2 restart myapp`),
+    command: () => deployer.sshCommand(`pm2 restart myapp`),
   },
 ];
 
