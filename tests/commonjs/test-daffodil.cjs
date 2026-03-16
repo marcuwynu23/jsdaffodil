@@ -1,24 +1,24 @@
-// CommonJS Test Suite for JSDaffodil (using dynamic import of ESM entry)
+// CommonJS Test Suite for JSDaffodil using a simple custom runner
 const fs = require("fs-extra");
 const path = require("path");
 
-// Test results
 let testsPassed = 0;
 let testsFailed = 0;
 const failures = [];
 
-// Simple test runner
 function test(name, fn) {
-  try {
-    fn();
-    testsPassed++;
-    console.log(`✓ ${name}`);
-  } catch (error) {
-    testsFailed++;
-    failures.push({ name, error: error.message });
-    console.error(`✗ ${name}`);
-    console.error(`  Error: ${error.message}`);
-  }
+  Promise.resolve()
+    .then(fn)
+    .then(() => {
+      testsPassed++;
+      console.log(`✓ ${name}`);
+    })
+    .catch((error) => {
+      testsFailed++;
+      failures.push({ name, error: error.message });
+      console.error(`✗ ${name}`);
+      console.error(`  Error: ${error.message}`);
+    });
 }
 
 function assert(condition, message) {
@@ -49,7 +49,6 @@ function assertThrows(fn, errorType, message) {
 console.log("\n🧪 Running CommonJS Tests for JSDaffodil\n");
 console.log("=".repeat(50));
 
-// Wrap all test definitions so we can `await import()` from CommonJS
 (async () => {
   const {
     Daffodil,
@@ -66,7 +65,6 @@ console.log("=".repeat(50));
     port: parseInt(process.env.REMOTE_PORT) || 22,
   };
 
-// Test 1: Constructor
 test("Constructor - creates instance with required parameters", () => {
   const deployer = new Daffodil({
     remoteUser: TEST_CONFIG.remoteUser,
@@ -345,20 +343,33 @@ test("transferFiles - throws PathNotFoundError for non-existent path", async () 
     remoteUser: TEST_CONFIG.remoteUser,
     remoteHost: TEST_CONFIG.remoteHost,
   });
-  
+
   // Mock connect to avoid actual SSH connection
   deployer.ssh = {
     execCommand: async () => ({ code: 0 }),
     putFile: async () => {},
   };
-  
+
+  // Suppress noisy console output for this expected-failure test
+  const originalError = console.error;
+  const originalLog = console.log;
+  console.error = () => {};
+  console.log = () => {};
+
   try {
-    await deployer.transferFiles("/nonexistent/path");
-    throw new Error("Should have thrown PathNotFoundError");
-  } catch (error) {
-    if (!(error instanceof PathNotFoundError)) {
-      throw new Error(`Expected PathNotFoundError, got ${error.constructor.name}`);
+    try {
+      await deployer.transferFiles("/nonexistent/path");
+      throw new Error("Should have thrown PathNotFoundError");
+    } catch (error) {
+      if (!(error instanceof PathNotFoundError)) {
+        throw new Error(
+          `Expected PathNotFoundError, got ${error.constructor.name}`
+        );
+      }
     }
+  } finally {
+    console.error = originalError;
+    console.log = originalLog;
   }
 });
 
@@ -377,14 +388,14 @@ test("deploy - throws DeploymentError when step fails (non-verbose)", async () =
     remoteHost: TEST_CONFIG.remoteHost,
     verbose: false,
   });
-  
+
   // Mock connect
   deployer.ssh = {
     connect: async () => {},
     execCommand: async () => ({ code: 0 }),
     dispose: () => {},
   };
-  
+
   const steps = [
     {
       step: "Failing step",
@@ -393,18 +404,30 @@ test("deploy - throws DeploymentError when step fails (non-verbose)", async () =
       },
     },
   ];
-  
+
+  // Suppress noisy console output for this expected-failure test
+  const originalError = console.error;
+  const originalLog = console.log;
+  console.error = () => {};
+  console.log = () => {};
+
   try {
-    await deployer.deploy(steps);
-    throw new Error("Should have thrown DeploymentError");
-  } catch (error) {
-    if (!(error instanceof DeploymentError)) {
-      throw new Error(`Expected DeploymentError, got ${error.constructor.name}`);
+    try {
+      await deployer.deploy(steps);
+      throw new Error("Should have thrown DeploymentError");
+    } catch (error) {
+      if (!(error instanceof DeploymentError)) {
+        throw new Error(
+          `Expected DeploymentError, got ${error.constructor.name}`
+        );
+      }
     }
+  } finally {
+    console.error = originalError;
+    console.log = originalLog;
   }
 });
 
-  // Test 12: Verbose logging
 test("log - includes timestamp when verbose is true", () => {
   const deployer = new Daffodil({
     remoteUser: TEST_CONFIG.remoteUser,
@@ -418,10 +441,10 @@ test("log - includes timestamp when verbose is true", () => {
   console.log = (...args) => {
     logs.push(args.join(" "));
   };
-  
+
   deployer.log("Test message", "blue");
   console.log = originalLog;
-  
+
   assert(logs.length > 0, "Should log message");
   assert(logs[0].includes("Test message"), "Should include message");
   assert(logs[0].includes("["), "Should include timestamp bracket");
@@ -439,43 +462,39 @@ test("log - no timestamp when verbose is false", () => {
   console.log = (...args) => {
     // Join args and strip ANSI color codes for testing
     const logMessage = args.join(" ");
-    // Remove ANSI escape codes (simple regex)
     const cleanMessage = logMessage.replace(/\u001b\[[0-9;]*m/g, "");
     logs.push(cleanMessage);
   };
-  
+
   deployer.log("Test message", "blue");
   console.log = originalLog;
-  
+
   assert(logs.length > 0, "Should log message");
   assert(logs[0].includes("Test message"), "Should include message");
-  // Check that it doesn't contain ISO timestamp pattern (YYYY-MM-DDTHH:mm:ss)
   const isoDatePattern = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
   assert(!isoDatePattern.test(logs[0]), "Should not include ISO timestamp");
-  // Also check no bracket with timestamp-like content
   const timestampBracketPattern = /\[\d{4}-\d{2}-\d{2}/;
-  assert(!timestampBracketPattern.test(logs[0]), "Should not include timestamp bracket");
-  });
+  assert(
+    !timestampBracketPattern.test(logs[0]),
+    "Should not include timestamp bracket"
+  );
+});
 
   // Test Summary
-  console.log("\n" + "=".repeat(50));
-  console.log("\n📊 Test Results:");
-  console.log(`✓ Passed: ${testsPassed}`);
-  console.log(`✗ Failed: ${testsFailed}`);
+  setTimeout(() => {
+    console.log("\n" + "=".repeat(50));
+    console.log("\n📊 Test Results:");
+    console.log(`✓ Passed: ${testsPassed}`);
+    console.log(`✗ Failed: ${testsFailed}`);
 
-  if (failures.length > 0) {
-    console.log("\n❌ Failed Tests:");
-    failures.forEach(({ name, error }) => {
-      console.log(`  - ${name}: ${error}`);
-    });
-  }
+    if (failures.length > 0) {
+      console.log("\n❌ Failed Tests:");
+      failures.forEach(({ name, error }) => {
+        console.log(`  - ${name}: ${error}`);
+      });
+    }
 
-  if (testsFailed === 0) {
-    console.log("\n✅ All tests passed!");
-    process.exit(0);
-  } else {
-    console.log("\n❌ Some tests failed!");
-    process.exit(1);
-  }
+    process.exit(testsFailed === 0 ? 0 : 1);
+  }, 100);
 })();
 

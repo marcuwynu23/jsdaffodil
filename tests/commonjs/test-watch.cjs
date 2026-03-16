@@ -1,31 +1,26 @@
-// CommonJS Tests for Daffodil.watch() (using dynamic import of ESM entry)
+// CommonJS Tests for Daffodil.watch() using a simple custom runner
+const TEST_CONFIG = {
+  remoteUser: "testuser",
+  remoteHost: "test.example.com",
+};
+
 let testsPassed = 0;
 let testsFailed = 0;
 const failures = [];
 
 function test(name, fn) {
-  try {
-    fn();
-    testsPassed++;
-    console.log(`✓ ${name}`);
-  } catch (error) {
-    testsFailed++;
-    failures.push({ name, error: error.message });
-    console.error(`✗ ${name}`);
-    console.error(`  Error: ${error.message}`);
-  }
-}
-
-function assert(condition, message) {
-  if (!condition) {
-    throw new Error(message || "Assertion failed");
-  }
-}
-
-function assertEqual(actual, expected, message) {
-  if (actual !== expected) {
-    throw new Error(message || `Expected ${expected}, got ${actual}`);
-  }
+  Promise.resolve()
+    .then(fn)
+    .then(() => {
+      testsPassed++;
+      console.log(`✓ ${name}`);
+    })
+    .catch((error) => {
+      testsFailed++;
+      failures.push({ name, error: error.message });
+      console.error(`✗ ${name}`);
+      console.error(`  Error: ${error.message}`);
+    });
 }
 
 console.log("\n🧪 Running CommonJS watch() Tests for JSDaffodil\n");
@@ -34,75 +29,75 @@ console.log("=".repeat(50));
 (async () => {
   const { Daffodil } = await import("../../src/index.js");
 
-  const TEST_CONFIG = {
-    remoteUser: "testuser",
-    remoteHost: "test.example.com",
-  };
-
-  test("watch - method exists on Daffodil instances", () => {
+  test("watch - method exists on Daffodil instances (CJS)", () => {
     const deployer = new Daffodil({
       remoteUser: TEST_CONFIG.remoteUser,
       remoteHost: TEST_CONFIG.remoteHost,
     });
-    assert(typeof deployer.watch === "function", "watch should be a function");
+    if (typeof deployer.watch !== "function") {
+      throw new Error("watch should be a function");
+    }
   });
 
-  test("watch - returns watcher with deploy and stop", () => {
+  test("watch - returns watcher with deploy and stop (CJS)", () => {
     const deployer = new Daffodil({
       remoteUser: TEST_CONFIG.remoteUser,
       remoteHost: TEST_CONFIG.remoteHost,
     });
     const watcher = deployer.watch({ paths: ["./dist"] });
-    assert(watcher, "watch() should return a watcher object");
-    assertEqual(
-      typeof watcher.deploy,
-      "function",
-      "watcher.deploy should be a function"
-    );
-    assertEqual(
-      typeof watcher.stop,
-      "function",
-      "watcher.stop should be a function"
-    );
-  });
-
-  test("watch - throws when deploy() called with empty steps", async () => {
-    const deployer = new Daffodil({
-      remoteUser: TEST_CONFIG.remoteUser,
-      remoteHost: TEST_CONFIG.remoteHost,
-    });
-    const watcher = deployer.watch({});
-
-    let threw = false;
-    try {
-      await watcher.deploy([]);
-    } catch (error) {
-      threw = true;
-      assert(
-        error.message.includes("requires a non-empty steps array"),
-        "deploy() should validate steps array"
-      );
+    if (!watcher) {
+      throw new Error("watch() should return a watcher object");
     }
-    assert(threw, "deploy([]) should throw");
+    if (typeof watcher.deploy !== "function") {
+      throw new Error("watcher.deploy should be a function");
+    }
+    if (typeof watcher.stop !== "function") {
+      throw new Error("watcher.stop should be a function");
+    }
   });
 
-  console.log("\n" + "=".repeat(50));
-  console.log("\n📊 Test Results (watch - CommonJS):");
-  console.log(`✓ Passed: ${testsPassed}`);
-  console.log(`✗ Failed: ${testsFailed}`);
+  test(
+    "watch - throws when deploy() called with empty steps (CJS)",
+    async () => {
+      const deployer = new Daffodil({
+        remoteUser: TEST_CONFIG.remoteUser,
+        remoteHost: TEST_CONFIG.remoteHost,
+      });
+      const watcher = deployer.watch({});
 
-  if (failures.length > 0) {
-    console.log("\n❌ Failed Tests:");
-    failures.forEach(({ name, error }) => {
-      console.log(`  - ${name}: ${error}`);
-    });
-  }
+      let threw = false;
+      try {
+        await watcher.deploy([]);
+      } catch (error) {
+        threw = true;
+        if (
+          !error.message.includes("requires a non-empty steps array")
+        ) {
+          throw new Error(
+            "deploy() should validate steps array and mention non-empty requirement"
+          );
+        }
+      }
+      if (!threw) {
+        throw new Error("deploy([]) should throw");
+      }
+    }
+  );
 
-  if (testsFailed === 0) {
-    console.log("\n✅ All watch() tests (CommonJS) passed!");
-    process.exit(0);
-  } else {
-    console.log("\n❌ Some watch() tests (CommonJS) failed!");
-    process.exit(1);
-  }
+  // Small delay to allow async tests to finish
+  setTimeout(() => {
+    console.log("\n" + "=".repeat(50));
+    console.log("\n📊 Test Results (watch - CommonJS):");
+    console.log(`✓ Passed: ${testsPassed}`);
+    console.log(`✗ Failed: ${testsFailed}`);
+
+    if (failures.length > 0) {
+      console.log("\n❌ Failed Tests:");
+      failures.forEach(({ name, error }) => {
+        console.log(`  - ${name}: ${error}`);
+      });
+    }
+
+    process.exit(testsFailed === 0 ? 0 : 1);
+  }, 100);
 })();
