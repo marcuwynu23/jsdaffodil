@@ -349,8 +349,8 @@ const steps = [
 
 | Option       | Type      | Default        | Description                                        |
 | ------------ | --------- | -------------- | -------------------------------------------------- |
-| `remoteUser` | `string`  | **Required***  | SSH username for remote server (single-host mode)  |
-| `remoteHost` | `string`  | **Required***  | Remote server hostname or IP address (single-host) |
+| `remoteUser` | `string`  | **Required\*** | SSH username for remote server (single-host mode)  |
+| `remoteHost` | `string`  | **Required\*** | Remote server hostname or IP address (single-host) |
 | `remotePath` | `string`  | `"."`          | Default remote directory path                      |
 | `port`       | `number`  | `22`           | SSH port number                                    |
 | `ignoreFile` | `string`  | `".scpignore"` | Path to ignore patterns file                       |
@@ -451,7 +451,9 @@ const steps = [
   {
     step: "Install dependencies",
     command: () =>
-      deployer.sshCommand("cd /var/www/myapp && npm install --production=false"),
+      deployer.sshCommand(
+        "cd /var/www/myapp && npm install --production=false"
+      ),
   },
   {
     step: "Restart application",
