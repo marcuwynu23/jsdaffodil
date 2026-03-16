@@ -1,8 +1,8 @@
-# 🔧 JSDaffodil Developer Documentation
+# JSDaffodil Developer Documentation
 
 Comprehensive documentation for developers contributing to or extending JSDaffodil.
 
-## 📚 Table of Contents
+## Table of Contents
 
 1. [Project Overview](#project-overview)
 2. [Project Structure](#project-structure)
@@ -17,7 +17,7 @@ Comprehensive documentation for developers contributing to or extending JSDaffod
 11. [Code Style](#code-style)
 12. [Debugging](#debugging)
 
-## 🎯 Project Overview
+## Project Overview
 
 JSDaffodil is a cross-platform deployment automation framework for Node.js. It provides a clean API for SSH-based deployments with archive-based file transfer.
 
@@ -31,7 +31,7 @@ JSDaffodil is a cross-platform deployment automation framework for Node.js. It p
 - **cli-progress** - Progress bars
 - **fs-extra** - Enhanced file system operations
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 jsdaffodil/
@@ -49,7 +49,7 @@ jsdaffodil/
 └── dist/                 # Distribution/test files
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### High-Level Architecture
 
@@ -85,7 +85,7 @@ jsdaffodil/
 4. **Dual Module Support** - Both ESM and CommonJS
 5. **User-Friendly** - Human-readable errors and verbose logging
 
-## 🛠️ Development Setup
+## Development Setup
 
 ### Prerequisites
 
@@ -130,7 +130,7 @@ REMOTE_HOST=your_server_ip
 REMOTE_PATH=/path/to/deploy
 ```
 
-## 📦 Code Organization
+## Code Organization
 
 ### Main Module (`index.js`)
 
@@ -174,7 +174,7 @@ export class Daffodil {
 }
 ```
 
-## 🔍 Core Components
+## Core Components
 
 ### 1. Connection Management
 
@@ -293,7 +293,7 @@ try {
 }
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Sample Structure
 
@@ -352,7 +352,7 @@ const steps = [
 })();
 ```
 
-## 📦 Building & Distribution
+## Building & Distribution
 
 ### Module System
 
@@ -398,7 +398,7 @@ npm test
 npm publish
 ```
 
-## 🔌 Extension Points
+## Extension Points
 
 ### Adding New Methods
 
@@ -459,7 +459,7 @@ logCustom(message, data) {
 }
 ```
 
-## 📝 Contributing Guidelines
+## Contributing Guidelines
 
 ### Code Style
 
@@ -492,7 +492,7 @@ chore: maintenance tasks
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 
-## 🎨 Code Style
+## Code Style
 
 ### Naming Conventions
 
@@ -530,7 +530,7 @@ async transferFiles(localPath, destinationPath = this.remotePath) {
 }
 ```
 
-## 🐛 Debugging
+## Debugging
 
 ### Enable Verbose Mode
 
@@ -573,14 +573,14 @@ if (this.verbose) {
 4. **Review stack traces**
 5. **Test with minimal examples**
 
-## 📚 Additional Resources
+## Additional Resources
 
 - **GUIDELINES.md** - User guide and examples
 - **CONTRIBUTING.md** - Contribution guidelines
 - **README.md** - Quick reference
 - **Samples** - Working examples in `samples/` directory
 
-## 🔗 External Dependencies
+## External Dependencies
 
 ### Core Dependencies
 
@@ -595,7 +595,7 @@ if (this.verbose) {
 
 - **dotenv** (^17.2.3) - Environment variables
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 Potential areas for extension:
 
@@ -619,7 +619,7 @@ Potential areas for extension:
    - Health checks
    - Notifications
 
-## ❓ Questions?
+## Questions?
 
 If you have questions about development:
 
@@ -630,4 +630,4 @@ If you have questions about development:
 
 ---
 
-Happy coding! 🌼
+Happy coding!

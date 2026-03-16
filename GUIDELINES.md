@@ -1,8 +1,8 @@
-# 📖 JSDaffodil Usage Guidelines
+# JSDaffodil Usage Guidelines
 
 Complete guide to using JSDaffodil for deployment automation. This guide covers everything from basic setup to advanced usage patterns.
 
-## 📚 Table of Contents
+## Table of Contents
 
 1. [Installation](#installation)
 2. [Quick Start](#quick-start)
@@ -14,7 +14,7 @@ Complete guide to using JSDaffodil for deployment automation. This guide covers 
 8. [Examples](#examples)
 9. [Troubleshooting](#troubleshooting)
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
@@ -28,7 +28,7 @@ Complete guide to using JSDaffodil for deployment automation. This guide covers 
 npm install @marcuwynu23/jsdaffodil
 ```
 
-## 🎯 Quick Start
+## Quick Start
 
 ### Basic ESM Example
 
@@ -80,7 +80,7 @@ const steps = [
 deployer.deploy(steps).catch(console.error);
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Constructor Options
 
@@ -120,7 +120,7 @@ deployer.setOption({
 });
 ```
 
-## 🔧 Core Features
+## Core Features
 
 ### 1. File Transfer
 
@@ -220,7 +220,7 @@ const steps = [
 await deployer.deploy(steps);
 ```
 
-## 🎨 Advanced Usage
+## Advanced Usage
 
 ### Verbose Logging
 
@@ -364,7 +364,7 @@ deployer.setOption({ verbose: true });
 //   Stack Trace: ...
 ```
 
-## 📝 Best Practices
+## Best Practices
 
 ### 1. SSH Key Setup
 
@@ -449,7 +449,7 @@ node_modules/
 .git/
 ```
 
-## 📚 Examples
+## Examples
 
 ### Complete Deployment Script
 
@@ -639,7 +639,7 @@ deployer.deploy(steps).catch((error) => {
    - With verbose mode, all operations are logged with timestamps
    - Review error messages for specific issues
 
-## 📖 Additional Resources
+## Additional Resources
 
 - **README.md** - Quick reference and overview
 - **DOCUMENTATION.md** - Developer documentation
@@ -658,4 +658,4 @@ If you encounter issues:
 
 ---
 
-Happy deploying! 🌼
+Happy deploying!

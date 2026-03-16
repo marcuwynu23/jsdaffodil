@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🌼 JSDaffodil</h1>
+  <h1>JSDaffodil</h1>
   <p><strong>Cross-Platform Deployment Automation Framework for Node.js</strong></p>
   <p>
     <img src="https://img.shields.io/npm/v/@marcuwynu23/jsdaffodil.svg" alt="npm version"/>
@@ -11,26 +11,26 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 **JSDaffodil** is a lightweight, declarative deployment automation framework for Node.js that simplifies remote server deployments through SSH. Inspired by [pydaffodil](https://pypi.org/project/pydaffodil/), it provides a clean, step-by-step API for executing deployment tasks on remote servers.
 
-### ✨ Key Features
+### Key Features
 
-- 🚀 **Archive-Based File Transfer** - Efficient tar.gz compression for fast bulk file transfers
-- 🌍 **Cross-Platform Support** - Works seamlessly on Windows, Linux, and macOS
-- 🔐 **Multi-Key SSH Authentication** - Automatic fallback across multiple SSH key types
-- 📦 **Dual Module Support** - Full support for both CommonJS and ESM
-- 🎯 **Step-by-Step Execution** - Declarative task execution with clear progress tracking
-- 📁 **Ignore Pattern Support** - `.scpignore` file for excluding files from transfers
-- 🎨 **Beautiful CLI Output** - Styled terminal output with progress bars and spinners
-- ⚡ **Zero External Dependencies** - Pure Node.js implementation for archive creation
-- 👀 **Watch-Based CI/CD (`watch()`)** - Automatically trigger deployments on local file changes or Git events (commits, merges, tags)
-- 🌐 **Multi-Host Deployments via `inventory.ini`** - Run the same deployment steps across multiple servers defined in an inventory file
+- **Archive-Based File Transfer** - Efficient tar.gz compression for fast bulk file transfers
+- **Cross-Platform Support** - Works seamlessly on Windows, Linux, and macOS
+- **Multi-Key SSH Authentication** - Automatic fallback across multiple SSH key types
+- **Dual Module Support** - Full support for both CommonJS and ESM
+- **Step-by-Step Execution** - Declarative task execution with clear progress tracking
+- **Ignore Pattern Support** - `.scpignore` file for excluding files from transfers
+- **Beautiful CLI Output** - Styled terminal output with progress bars and spinners
+- **Zero External Dependencies** - Pure Node.js implementation for archive creation
+- **Watch-Based CI/CD (`watch()`)** - Automatically trigger deployments on local file changes or Git events (commits, merges, tags)
+- **Multi-Host Deployments via `inventory.ini`** - Run the same deployment steps across multiple servers defined in an inventory file
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 This project includes comprehensive documentation:
 
@@ -49,7 +49,7 @@ For quick examples, check the `samples/` directory:
 
 ---
 
-## 📦 Installation
+## Installation
 
 ```bash
 npm install @marcuwynu23/jsdaffodil
@@ -57,7 +57,7 @@ npm install @marcuwynu23/jsdaffodil
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### ESM Example
 
@@ -122,7 +122,7 @@ deployer.deploy(steps).catch(console.error);
 
 ---
 
-## 📚 API Reference
+## API Reference
 
 ### Constructor
 
@@ -204,7 +204,7 @@ deployer.watch({
 
 ---
 
-## 🛠️ Advanced Features
+## Advanced Features
 
 ### Archive-Based File Transfer
 
@@ -274,7 +274,7 @@ Thumbs.db
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
 ### 1. SSH Key Setup
 
@@ -345,7 +345,7 @@ const steps = [
 
 ---
 
-## 🔧 Configuration Options
+## Configuration Options
 
 | Option       | Type      | Default        | Description                                        |
 | ------------ | --------- | -------------- | -------------------------------------------------- |
@@ -362,7 +362,7 @@ const steps = [
 
 ---
 
-## 🕒 Watch-Based CI/CD with `watch()`
+## Watch-Based CI/CD with `watch()`
 
 Use `watch()` to automatically trigger deployments when files change or Git state updates.
 
@@ -419,7 +419,7 @@ See `samples/watch-sample.mjs` and `samples/watch-sample.cjs` for complete examp
 
 ---
 
-## 🌐 Multi-Host Deployments with `inventory.ini`
+## Multi-Host Deployments with `inventory.ini`
 
 Deploy to multiple servers with a single script using an `inventory.ini` file.
 
@@ -476,7 +476,7 @@ See `samples/inventory-sample.mjs` and `samples/inventory-sample.cjs` for full e
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 - **Node.js** >= 14.0.0
 - **SSH access** to remote server
@@ -484,7 +484,7 @@ See `samples/inventory-sample.mjs` and `samples/inventory-sample.cjs` for full e
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) guide for contribution guidelines, code review process, and best practices.
 
@@ -492,18 +492,18 @@ For developers, see [DOCUMENTATION.md](./DOCUMENTATION.md) for architecture deta
 
 ---
 
-## 📄 License
+## License
 
 [MIT License](./LICENSE) - feel free to use this project for any purpose.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Inspired by [pydaffodil](https://pypi.org/project/pydaffodil/) - a Python deployment automation framework.
 
 ---
 
 <div align="center">
-  <p>Made with ❤️ by <a href="https://github.com/marcuwynu23">Mark Wayne B. Menorca</a></p>
+  <p>Made with love by <a href="https://github.com/marcuwynu23">Mark Wayne B. Menorca</a></p>
 </div>
