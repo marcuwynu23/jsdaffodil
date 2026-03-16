@@ -52,6 +52,63 @@ export class DeploymentError extends Error {
   }
 }
 
+/**
+ * Parse a simple inventory.ini file to support multi-host deployments.
+ * Expected format:
+ *   [groupName]
+ *   server1 host=1.2.3.4 user=deployer port=22
+ *   server2 host=1.2.3.5 user=ubuntu
+ */
+function parseInventoryFile(inventoryPath, group) {
+  const content = fs.readFileSync(inventoryPath, "utf8");
+  const lines = content.split(/\r?\n/);
+  let currentGroup = null;
+  const groups = {};
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#") || line.startsWith(";")) continue;
+
+    const groupMatch = line.match(/^\[(.+?)\]$/);
+    if (groupMatch) {
+      currentGroup = groupMatch[1].trim();
+      if (!groups[currentGroup]) groups[currentGroup] = [];
+      continue;
+    }
+
+    if (!currentGroup) continue;
+
+    const parts = line.split(/\s+/);
+    if (parts.length === 0) continue;
+
+    const name = parts[0];
+    const hostConfig = { name, group: currentGroup };
+
+    for (let i = 1; i < parts.length; i++) {
+      const [key, value] = parts[i].split("=");
+      if (!key || typeof value === "undefined") continue;
+      const k = key.trim();
+      const v = value.trim();
+      if (!v) continue;
+      if (k === "host") hostConfig.host = v;
+      else if (k === "user") hostConfig.user = v;
+      else if (k === "port") hostConfig.port = Number.parseInt(v, 10) || 22;
+      else hostConfig[k] = v;
+    }
+
+    if (hostConfig.host && hostConfig.user) {
+      groups[currentGroup].push(hostConfig);
+    }
+  }
+
+  if (group) {
+    return groups[group] || [];
+  }
+
+  // If no specific group provided, flatten all groups
+  return Object.values(groups).flat();
+}
+
 export class Daffodil {
   constructor({
     remoteUser,
@@ -60,13 +117,18 @@ export class Daffodil {
     port = 22,
     ignoreFile = ".scpignore",
     verbose = false,
+    inventory,
+    group,
   }) {
+    const usingInventory = Boolean(inventory);
     // Validate required parameters
-    if (!remoteUser || typeof remoteUser !== "string") {
-      throw new Error("remoteUser is required and must be a string");
-    }
-    if (!remoteHost || typeof remoteHost !== "string") {
-      throw new Error("remoteHost is required and must be a string");
+    if (!usingInventory) {
+      if (!remoteUser || typeof remoteUser !== "string") {
+        throw new Error("remoteUser is required and must be a string");
+      }
+      if (!remoteHost || typeof remoteHost !== "string") {
+        throw new Error("remoteHost is required and must be a string");
+      }
     }
     if (port && (typeof port !== "number" || port < 1 || port > 65535)) {
       throw new Error("port must be a number between 1 and 65535");
@@ -80,6 +142,37 @@ export class Daffodil {
     this.ignoreFile = ignoreFile;
     this.excludeList = this.loadIgnoreList();
     this.verbose = verbose;
+
+    // Multi-host inventory support
+    this.inventory = inventory || null;
+    this.inventoryGroup = group || null;
+    this.inventoryTargets = null;
+
+    if (usingInventory) {
+      const inventoryPath = path.resolve(inventory);
+      if (!fs.existsSync(inventoryPath)) {
+        throw new Error(
+          `Inventory file not found: ${inventoryPath}. Please provide a valid inventory.ini path.`
+        );
+      }
+      const targets = parseInventoryFile(inventoryPath, group);
+      if (!targets.length) {
+        throw new Error(
+          group
+            ? `No hosts found in inventory group "${group}".`
+            : "No hosts found in inventory file."
+        );
+      }
+      this.inventoryTargets = targets;
+      if (this.verbose) {
+        this.log(
+          `Loaded ${targets.length} host(s) from inventory${
+            group ? ` group "${group}"` : ""
+          }`,
+          "blue"
+        );
+      }
+    }
   }
 
   /**
@@ -707,7 +800,7 @@ export class Daffodil {
     }
   }
 
-  async deploy(steps) {
+  async _deploySingle(steps) {
     const deployStartTime = Date.now();
     if (this.verbose) {
       this.log(`Starting deployment with ${steps.length} step(s)`, "blue");
@@ -780,6 +873,46 @@ export class Daffodil {
     // Only show success if all steps completed
     console.log(chalk.green("? Deployment finished."));
     this.logTimeConsumption("Total deployment", deployStartTime);
+  }
+
+  /**
+   * High-level deploy entrypoint. In single-host mode it runs once, in
+   * multi-host mode (inventory) it runs sequentially for each host.
+   */
+  async deploy(steps) {
+    // Multi-host deployment via inventory
+    if (this.inventoryTargets && this.inventoryTargets.length > 0) {
+      for (const target of this.inventoryTargets) {
+        const hostLabel = target.name || target.host;
+        console.log("");
+        console.log(
+          chalk.cyan(
+            `==== Starting deployment for [${hostLabel}] (${target.host}) ====`
+          )
+        );
+
+        const child = new Daffodil({
+          remoteUser: target.user,
+          remoteHost: target.host,
+          remotePath: this.remotePath,
+          port: target.port || this.port || 22,
+          ignoreFile: this.ignoreFile,
+          verbose: this.verbose,
+        });
+
+        await child._deploySingle(steps);
+
+        console.log(
+          chalk.cyan(
+            `==== Finished deployment for [${hostLabel}] (${target.host}) ====`
+          )
+        );
+      }
+      return;
+    }
+
+    // Single-host behavior (existing behavior)
+    await this._deploySingle(steps);
   }
 
   /**
