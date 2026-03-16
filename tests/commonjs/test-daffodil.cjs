@@ -289,6 +289,11 @@ test("PathNotFoundError - creates error with path and type", () => {
 test("TransferError - creates error with message and original error", () => {
   const originalError = new Error("Original error");
   const error = new TransferError("Transfer failed", originalError);
+
+  // Log the failure message to simulate a real transfer error,
+  // while still keeping the test assertion flow smooth.
+  console.log(`Simulated transfer failure: ${error.message}`);
+
   assertEqual(error.name, "TransferError");
   assertEqual(error.message, "Transfer failed");
   assertEqual(error.originalError, originalError);
@@ -389,12 +394,8 @@ test("deploy - throws DeploymentError when step fails (non-verbose)", async () =
     verbose: false,
   });
 
-  // Mock connect
-  deployer.ssh = {
-    connect: async () => {},
-    execCommand: async () => ({ code: 0 }),
-    dispose: () => {},
-  };
+  // Mock connect to avoid real SSH and force deploy() to proceed directly to steps
+  deployer.connect = async () => {};
 
   const steps = [
     {

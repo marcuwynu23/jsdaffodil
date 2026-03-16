@@ -400,17 +400,17 @@ export class Daffodil {
 
     // Validate local path exists before proceeding
     if (!(await fs.pathExists(localPath))) {
-      spinner.fail(chalk.red("Transfer failed: Path does not exist"));
+      // Stop spinner but avoid marking as a generic "failure" banner,
+      // since a missing path is already surfaced via the thrown error.
+      spinner.stop();
       const isDirectory =
         localPath.endsWith(path.sep) || localPath.endsWith("/");
       const error = new PathNotFoundError(
         localPath,
         isDirectory ? "directory" : "file or directory"
       );
-      // Only log detailed error in verbose mode
-      if (this.verbose) {
-        this.logError("Transfer failed: Path does not exist", error);
-      }
+      // Always log a clear message, more detailed when verbose.
+      this.logError("Transfer failed: Path does not exist", error);
       throw error;
     }
 
