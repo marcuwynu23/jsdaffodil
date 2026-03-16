@@ -7,3 +7,4 @@ dist/
 .scpignore
 .customignore
 *.test-scpignore-*
+inventory.ini
