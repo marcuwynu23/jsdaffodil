@@ -47,6 +47,9 @@
   "author": "Mark Wayne B. Menorca",
   "publisher": "Mark Wayne B. Menorca",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/marcuwynu23/jsdaffodil.git"
