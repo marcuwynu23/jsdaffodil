@@ -1,19 +1,23 @@
 # Husky v10+ pre-push hook (no husky.sh shim)
+#
+# For tag pushes, just ensure CHANGELOG.md is already up to date.
+# The developer is responsible for running `npm run changelog` and committing it
+# before creating/pushing a tag.
 
-# Read refs from stdin and detect tag pushes
 while read local_ref local_sha remote_ref remote_sha
 do
   if [[ "$local_ref" =~ ^refs/tags/ ]]; then
-    echo "🔄 Tag detected! Updating CHANGELOG.md..."
-    npm run changelog
+    echo "🔄 Tag detected! Verifying CHANGELOG.md..."
 
-    if git diff --quiet CHANGELOG.md; then
-      echo "✅ CHANGELOG.md is up to date"
-    else
-      echo "📝 CHANGELOG.md has been updated"
-      echo "⚠️  Please commit the updated CHANGELOG.md before pushing the tag"
-      echo "   Run: git add CHANGELOG.md && git commit -m 'chore: update CHANGELOG.md'"
+    # If CHANGELOG.md has unstaged or uncommitted changes, block the push
+    if ! git diff --quiet CHANGELOG.md; then
+      echo "⚠️  CHANGELOG.md has local changes."
+      echo "   Please run: npm run changelog"
+      echo "   Then: git add CHANGELOG.md && git commit -m 'chore: update CHANGELOG.md'"
+      echo "   Recreate or re-push the tag after committing."
       exit 1
     fi
+
+    echo "✅ CHANGELOG.md is up to date for tag push."
   fi
 done
