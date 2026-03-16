@@ -25,6 +25,8 @@
 - 📁 **Ignore Pattern Support** - `.scpignore` file for excluding files from transfers
 - 🎨 **Beautiful CLI Output** - Styled terminal output with progress bars and spinners
 - ⚡ **Zero External Dependencies** - Pure Node.js implementation for archive creation
+- 👀 **Watch-Based CI/CD (`watch()`)** - Automatically trigger deployments on local file changes or Git events (commits, merges, tags)
+- 🌐 **Multi-Host Deployments via `inventory.ini`** - Run the same deployment steps across multiple servers defined in an inventory file
 
 ---
 
@@ -40,6 +42,10 @@ For quick examples, check the `samples/` directory:
 
 - `samples/sample.mjs` - ESM module example
 - `samples/sample.cjs` - CommonJS module example
+- `samples/watch-sample.mjs` - ESM example using `watch()` for file + Git triggers
+- `samples/watch-sample.cjs` - CommonJS example using `watch()`
+- `samples/inventory-sample.mjs` - ESM multi-host deployment with `inventory.ini`
+- `samples/inventory-sample.cjs` - CommonJS multi-host deployment with `inventory.ini`
 
 ---
 
@@ -122,11 +128,14 @@ deployer.deploy(steps).catch(console.error);
 
 ```javascript
 new Daffodil({
-  remoteUser: string,        // SSH username
-  remoteHost: string,        // Server hostname or IP
+  remoteUser: string,        // SSH username (single-host mode)
+  remoteHost: string,        // Server hostname or IP (single-host mode)
   remotePath?: string,       // Default remote path (default: ".")
   port?: number,             // SSH port (default: 22)
   ignoreFile?: string,       // Ignore file path (default: ".scpignore")
+  verbose?: boolean,         // Verbose logging (default: false)
+  inventory?: string,        // Path to inventory.ini (multi-host mode)
+  group?: string,            // Group name inside inventory.ini
 })
 ```
 
@@ -174,6 +183,24 @@ Creates a directory on the remote server.
 Executes a series of deployment steps sequentially.
 
 - **`steps`** (Array): Array of step objects with `step` (description) and `command` (async function)
+
+-#### `watch(options)`
+
+Creates a watcher that can trigger deployments based on file system or Git changes. Returns an internal watcher with a `.deploy(steps)` method.
+
+```javascript
+deployer.watch({
+  paths?: string[],           // Local files/folders to watch
+  debounce?: number,          // Debounce in ms before triggering deploy
+  repoPath?: string,          // Local Git repo path
+  branch?: string,            // Single branch to watch
+  branches?: string[],        // Multiple branches to watch
+  tags?: boolean,             // Watch tags
+  tagPattern?: RegExp,        // Filter tag names
+  events?: ("commit" | "merge" | "tag")[], // Git events
+  interval?: number,          // Poll interval in ms
+}).deploy(steps);
+```
 
 ---
 
@@ -320,13 +347,130 @@ const steps = [
 
 ## 🔧 Configuration Options
 
-| Option       | Type     | Default        | Description                          |
-| ------------ | -------- | -------------- | ------------------------------------ |
-| `remoteUser` | `string` | **Required**   | SSH username for remote server       |
-| `remoteHost` | `string` | **Required**   | Remote server hostname or IP address |
-| `remotePath` | `string` | `"."`          | Default remote directory path        |
-| `port`       | `number` | `22`           | SSH port number                      |
-| `ignoreFile` | `string` | `".scpignore"` | Path to ignore patterns file         |
+| Option       | Type      | Default        | Description                                        |
+| ------------ | --------- | -------------- | -------------------------------------------------- |
+| `remoteUser` | `string`  | **Required***  | SSH username for remote server (single-host mode)  |
+| `remoteHost` | `string`  | **Required***  | Remote server hostname or IP address (single-host) |
+| `remotePath` | `string`  | `"."`          | Default remote directory path                      |
+| `port`       | `number`  | `22`           | SSH port number                                    |
+| `ignoreFile` | `string`  | `".scpignore"` | Path to ignore patterns file                       |
+| `verbose`    | `boolean` | `false`        | Enable verbose logging                             |
+| `inventory`  | `string`  | `undefined`    | Path to `inventory.ini` for multi-host deployments |
+| `group`      | `string`  | `undefined`    | Inventory group name (e.g. `"webservers"`)         |
+
+> \* `remoteUser` and `remoteHost` are required in single-host mode. When `inventory` is provided, hosts are taken from `inventory.ini` instead.
+
+---
+
+## 🕒 Watch-Based CI/CD with `watch()`
+
+Use `watch()` to automatically trigger deployments when files change or Git state updates.
+
+### Example: Watch local files
+
+```javascript
+import { Daffodil } from "@marcuwynu23/jsdaffodil";
+
+const deployer = new Daffodil({
+  remoteUser: "deployer",
+  remoteHost: "231.142.34.222",
+  remotePath: "/var/www/myapp",
+});
+
+const steps = [
+  {
+    step: "Build project",
+    command: () => deployer.runCommand("npm run build"),
+  },
+  {
+    step: "Upload build",
+    command: () => deployer.transferFiles("./dist", "/var/www/myapp"),
+  },
+  {
+    step: "Restart application",
+    command: () => deployer.sshCommand("pm2 restart myapp"),
+  },
+];
+
+await deployer
+  .watch({
+    paths: ["./dist", "./src"],
+    debounce: 2000, // ms
+  })
+  .deploy(steps);
+```
+
+### Example: Watch Git repository (commits/merges/tags)
+
+```javascript
+await deployer
+  .watch({
+    repoPath: "/home/user/projects/myapp",
+    branches: ["main", "staging"],
+    tags: true,
+    tagPattern: /^v\d+\.\d+\.\d+$/,
+    events: ["commit", "merge", "tag"],
+    interval: 5000, // ms
+  })
+  .deploy(steps);
+```
+
+See `samples/watch-sample.mjs` and `samples/watch-sample.cjs` for complete examples.
+
+---
+
+## 🌐 Multi-Host Deployments with `inventory.ini`
+
+Deploy to multiple servers with a single script using an `inventory.ini` file.
+
+### Example `inventory.ini`
+
+```ini
+[webservers]
+server1 host=231.142.34.222 user=deployer port=22
+server2 host=231.142.34.223 user=deployer        ; uses default port 22
+server3 host=231.142.34.224 user=ubuntu port=2200
+```
+
+### Usage
+
+```javascript
+import { Daffodil } from "@marcuwynu23/jsdaffodil";
+
+const deployer = new Daffodil({
+  inventory: "./inventory.ini",
+  group: "webservers",
+  remotePath: "/var/www/myapp",
+});
+
+const steps = [
+  {
+    step: "Transfer application files",
+    command: () => deployer.transferFiles("./dist"),
+  },
+  {
+    step: "Install dependencies",
+    command: () =>
+      deployer.sshCommand("cd /var/www/myapp && npm install --production=false"),
+  },
+  {
+    step: "Restart application",
+    command: () => deployer.sshCommand("pm2 restart myapp"),
+  },
+];
+
+await deployer.deploy(steps);
+```
+
+This will sequentially run the same steps for each host in the `webservers` group, with logs like:
+
+```text
+==== Starting deployment for [server1] (231.142.34.222) ====
+...
+==== Finished deployment for [server1] (231.142.34.222) ====
+```
+
+See `samples/inventory-sample.mjs` and `samples/inventory-sample.cjs` for full examples.
 
 ---
 
