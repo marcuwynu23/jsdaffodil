@@ -1,15 +1,6 @@
-// CommonJS Test Suite for JSDaffodil
-const { Daffodil, PathNotFoundError, TransferError, DeploymentError } = require("../../index.cjs");
+// CommonJS Test Suite for JSDaffodil (using dynamic import of ESM entry)
 const fs = require("fs-extra");
 const path = require("path");
-
-// Test configuration
-const TEST_CONFIG = {
-  remoteUser: process.env.REMOTE_USER || "testuser",
-  remoteHost: process.env.REMOTE_HOST || "test.example.com",
-  remotePath: process.env.REMOTE_PATH || "/tmp/test",
-  port: parseInt(process.env.REMOTE_PORT) || 22,
-};
 
 // Test results
 let testsPassed = 0;
@@ -48,14 +39,32 @@ function assertThrows(fn, errorType, message) {
     throw new Error(message || "Expected function to throw");
   } catch (error) {
     if (errorType && !(error instanceof errorType)) {
-      throw new Error(message || `Expected ${errorType.name}, got ${error.constructor.name}`);
+      throw new Error(
+        message || `Expected ${errorType.name}, got ${error.constructor.name}`
+      );
     }
   }
 }
 
-// Test Suite
 console.log("\n🧪 Running CommonJS Tests for JSDaffodil\n");
 console.log("=".repeat(50));
+
+// Wrap all test definitions so we can `await import()` from CommonJS
+(async () => {
+  const {
+    Daffodil,
+    PathNotFoundError,
+    TransferError,
+    DeploymentError,
+  } = await import("../../src/index.js");
+
+  // Test configuration
+  const TEST_CONFIG = {
+    remoteUser: process.env.REMOTE_USER || "testuser",
+    remoteHost: process.env.REMOTE_HOST || "test.example.com",
+    remotePath: process.env.REMOTE_PATH || "/tmp/test",
+    port: parseInt(process.env.REMOTE_PORT) || 22,
+  };
 
 // Test 1: Constructor
 test("Constructor - creates instance with required parameters", () => {
@@ -395,7 +404,7 @@ test("deploy - throws DeploymentError when step fails (non-verbose)", async () =
   }
 });
 
-// Test 12: Verbose logging
+  // Test 12: Verbose logging
 test("log - includes timestamp when verbose is true", () => {
   const deployer = new Daffodil({
     remoteUser: TEST_CONFIG.remoteUser,
@@ -446,26 +455,27 @@ test("log - no timestamp when verbose is false", () => {
   // Also check no bracket with timestamp-like content
   const timestampBracketPattern = /\[\d{4}-\d{2}-\d{2}/;
   assert(!timestampBracketPattern.test(logs[0]), "Should not include timestamp bracket");
-});
-
-// Test Summary
-console.log("\n" + "=".repeat(50));
-console.log("\n📊 Test Results:");
-console.log(`✓ Passed: ${testsPassed}`);
-console.log(`✗ Failed: ${testsFailed}`);
-
-if (failures.length > 0) {
-  console.log("\n❌ Failed Tests:");
-  failures.forEach(({ name, error }) => {
-    console.log(`  - ${name}: ${error}`);
   });
-}
 
-if (testsFailed === 0) {
-  console.log("\n✅ All tests passed!");
-  process.exit(0);
-} else {
-  console.log("\n❌ Some tests failed!");
-  process.exit(1);
-}
+  // Test Summary
+  console.log("\n" + "=".repeat(50));
+  console.log("\n📊 Test Results:");
+  console.log(`✓ Passed: ${testsPassed}`);
+  console.log(`✗ Failed: ${testsFailed}`);
+
+  if (failures.length > 0) {
+    console.log("\n❌ Failed Tests:");
+    failures.forEach(({ name, error }) => {
+      console.log(`  - ${name}: ${error}`);
+    });
+  }
+
+  if (testsFailed === 0) {
+    console.log("\n✅ All tests passed!");
+    process.exit(0);
+  } else {
+    console.log("\n❌ Some tests failed!");
+    process.exit(1);
+  }
+})();
 

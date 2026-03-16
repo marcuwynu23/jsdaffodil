@@ -338,6 +338,14 @@ export class Daffodil {
     }
   }
 
+  /**
+   * Convenience alias for local shell execution.
+   * @param {string} cmd
+   */
+  async local(cmd) {
+    return this.runCommand(cmd);
+  }
+
   async sshCommand(cmd) {
     const startTime = Date.now();
     if (this.verbose) {
@@ -359,6 +367,14 @@ export class Daffodil {
       }
     }
     this.logTimeConsumption(`SSH command: ${cmd}`, startTime);
+  }
+
+  /**
+   * Convenience alias for running a remote SSH command.
+   * @param {string} cmd
+   */
+  async ssh(cmd) {
+    return this.sshCommand(cmd);
   }
 
   async makeDirectory(dirName) {
@@ -764,5 +780,246 @@ export class Daffodil {
     // Only show success if all steps completed
     console.log(chalk.green("? Deployment finished."));
     this.logTimeConsumption("Total deployment", deployStartTime);
+  }
+
+  /**
+   * Create a watcher that triggers deployments based on file system or Git changes.
+   * @param {Object} options
+   * @param {string[]} [options.paths] - Files/folders to watch for changes.
+   * @param {number} [options.debounce] - Debounce time in ms before triggering a deployment.
+   * @param {string} [options.repoPath] - Local Git repository path to monitor.
+   * @param {string} [options.branch] - Single branch to watch (alias for branches).
+   * @param {string[]} [options.branches] - Multiple branches to watch.
+   * @param {boolean} [options.tags] - Whether to watch Git tags.
+   * @param {RegExp} [options.tagPattern] - Optional pattern to filter tags.
+   * @param {("commit"|"merge"|"tag")[]} [options.events] - Git events to watch.
+   * @param {number} [options.interval] - Polling interval in ms for Git checks.
+   * @returns {DaffodilWatcher}
+   */
+  watch(options = {}) {
+    return new DaffodilWatcher(this, options);
+  }
+}
+
+class DaffodilWatcher {
+  constructor(deployer, options) {
+    this.deployer = deployer;
+    this.options = {
+      debounce: typeof options.debounce === "number" ? options.debounce : 2000,
+      interval: typeof options.interval === "number" ? options.interval : 5000,
+      events: Array.isArray(options.events)
+        ? options.events
+        : ["commit", "merge", "tag"],
+      ...options,
+    };
+
+    if (!this.options.branches && this.options.branch) {
+      this.options.branches = [this.options.branch];
+    }
+
+    this.debounceTimer = null;
+    this.gitInterval = null;
+    this.fsWatchers = [];
+    this.isDeploying = false;
+    this.pendingTrigger = false;
+    this.stopped = false;
+    this.steps = [];
+    this.lastGitState = null;
+  }
+
+  async deploy(steps) {
+    if (!Array.isArray(steps) || steps.length === 0) {
+      throw new Error("watch().deploy() requires a non-empty steps array");
+    }
+    this.steps = steps;
+    this.startFileWatchers();
+    this.startGitWatcher();
+  }
+
+  stop() {
+    this.stopped = true;
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    if (this.gitInterval) {
+      clearInterval(this.gitInterval);
+      this.gitInterval = null;
+    }
+    for (const w of this.fsWatchers) {
+      try {
+        w.close();
+      } catch {
+        // ignore
+      }
+    }
+    this.fsWatchers = [];
+  }
+
+  scheduleDeploy() {
+    if (this.stopped || !this.steps.length) return;
+    this.pendingTrigger = true;
+    const delay = this.options.debounce || 0;
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+    this.debounceTimer = setTimeout(() => {
+      this.runDeployIfNeeded();
+    }, delay);
+  }
+
+  async runDeployIfNeeded() {
+    if (this.stopped || this.isDeploying || !this.pendingTrigger) return;
+    this.pendingTrigger = false;
+    this.isDeploying = true;
+
+    this.deployer.log("Change detected, starting deployment...", "yellow");
+
+    try {
+      await this.deployer.deploy(this.steps);
+    } catch (err) {
+      this.deployer.logError("Deployment triggered by watcher failed", err);
+    } finally {
+      this.isDeploying = false;
+      if (this.pendingTrigger && !this.stopped) {
+        this.runDeployIfNeeded();
+      }
+    }
+  }
+
+  startFileWatchers() {
+    const { paths } = this.options;
+    if (!paths || !Array.isArray(paths) || paths.length === 0) {
+      return;
+    }
+
+    for (const p of paths) {
+      try {
+        const watcher = fs.watch(
+          p,
+          {
+            recursive: true,
+          },
+          () => {
+            this.deployer.log(`File change detected in: ${p}`, "blue");
+            this.scheduleDeploy();
+          }
+        );
+        this.fsWatchers.push(watcher);
+        this.deployer.log(`Watching path: ${p}`, "blue");
+      } catch (err) {
+        this.deployer.logError(`Failed to watch path: ${p}`, err);
+      }
+    }
+  }
+
+  startGitWatcher() {
+    const { repoPath, branches, tags, events, interval, tagPattern } =
+      this.options;
+    if (!repoPath) {
+      return;
+    }
+
+    const watchedBranches = Array.isArray(branches) ? branches : [];
+    const watchCommits = events.includes("commit") || events.includes("merge");
+    const watchMerges = events.includes("merge");
+    const watchTags = tags || events.includes("tag");
+    const cwd = repoPath;
+
+    const safeGit = (args) => {
+      try {
+        const output = execSync(`git ${args}`, {
+          cwd,
+          stdio: "pipe",
+        });
+        return output.toString().trim();
+      } catch (err) {
+        this.deployer.logError(`Git command failed: git ${args}`, err);
+        return null;
+      }
+    };
+
+    const readGitState = () => {
+      const state = {
+        branches: {},
+        merges: {},
+        tags: [],
+      };
+
+      if (watchCommits && watchedBranches.length > 0) {
+        for (const br of watchedBranches) {
+          const hash = safeGit(`rev-parse ${br}`);
+          if (hash) {
+            state.branches[br] = hash;
+          }
+        }
+      }
+
+      if (watchMerges && watchedBranches.length > 0) {
+        for (const br of watchedBranches) {
+          const mergeHash = safeGit(
+            `log --merges -1 --format=%H ${br} || echo ""`
+          );
+          state.merges[br] = mergeHash || "";
+        }
+      }
+
+      if (watchTags) {
+        const rawTags = safeGit("tag --list") || "";
+        const list = rawTags
+          .split("\n")
+          .map((t) => t.trim())
+          .filter(Boolean);
+        const filtered = tagPattern
+          ? list.filter((t) => {
+              try {
+                return tagPattern.test(t);
+              } catch {
+                return false;
+              }
+            })
+          : list;
+        state.tags = filtered;
+      }
+
+      return state;
+    };
+
+    const hasGitStateChanged = (prev, next) => {
+      if (!prev) return true;
+
+      for (const br of Object.keys(next.branches)) {
+        if (next.branches[br] !== prev.branches[br]) {
+          return true;
+        }
+      }
+
+      for (const br of Object.keys(next.merges)) {
+        if (next.merges[br] !== prev.merges[br]) {
+          return true;
+        }
+      }
+
+      if (next.tags.length !== prev.tags.length) return true;
+      const prevSet = new Set(prev.tags);
+      for (const tag of next.tags) {
+        if (!prevSet.has(tag)) return true;
+      }
+
+      return false;
+    };
+
+    this.lastGitState = readGitState();
+    this.deployer.log("Initial Git state captured for watcher", "blue");
+
+    this.gitInterval = setInterval(() => {
+      if (this.stopped) return;
+      const nextState = readGitState();
+      if (hasGitStateChanged(this.lastGitState, nextState)) {
+        this.deployer.log("Git change detected", "blue");
+        this.lastGitState = nextState;
+        this.scheduleDeploy();
+      }
+    }, interval);
   }
 }
