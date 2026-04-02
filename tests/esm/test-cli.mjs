@@ -74,6 +74,29 @@ test("CLI fails for unsupported step type", () => {
   fs.removeSync(dir);
 });
 
+test("CLI reads hosts from inventory.yml reference", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jsdaffodil-cli-"));
+  const cfg = path.join(dir, ".daffodil.yml");
+  const inv = path.join(dir, "inventory.yml");
+  fs.writeFileSync(
+    inv,
+    `hosts:\n  - name: web1\n    host: 127.0.0.1\n    user: deploy\n`,
+    "utf8"
+  );
+  fs.writeFileSync(
+    cfg,
+    `inventoryFile: inventory.yml\nsteps:\n  - name: Invalid\n    type: unknown\n`,
+    "utf8"
+  );
+  const res = runCli(["--config", cfg]);
+  assert(res.status !== 0, "Expected non-zero exit code");
+  assert(
+    (res.stderr || "").includes("Unsupported step type"),
+    "Expected parser to load inventory and proceed to step validation"
+  );
+  fs.removeSync(dir);
+});
+
 console.log("\n" + "=".repeat(50));
 console.log(`✓ Passed: ${testsPassed}`);
 console.log(`✗ Failed: ${testsFailed}`);

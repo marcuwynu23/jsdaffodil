@@ -495,6 +495,13 @@ jsdaffodil --config samples/.daffodil.yml --watch
 
 Use `samples/.daffodil.yml` as the reference schema (single-host or `hosts[]` multi-host). The filename is required to be exactly `.daffodil.yml`.
 
+You can also reference a separate inventory file:
+
+```yaml
+inventoryFile: inventory.yml
+inventoryGroup: webservers
+```
+
 ---
 
 ## Contributing
