@@ -70,10 +70,10 @@ Application or bin/jsdaffodil.mjs
 
 ## Main package (`src/`)
 
-| File | Role |
-| ---- | ---- |
-| `src/index.js` | `Daffodil` class; `PathNotFoundError`, `TransferError`, `DeploymentError`; `parseInventoryFile`; `watch().deploy()` pipeline |
-| `src/index.cjs` | CommonJS entry: surfaces helpful error directing users to ESM `import` |
+| File            | Role                                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `src/index.js`  | `Daffodil` class; `PathNotFoundError`, `TransferError`, `DeploymentError`; `parseInventoryFile`; `watch().deploy()` pipeline |
+| `src/index.cjs` | CommonJS entry: surfaces helpful error directing users to ESM `import`                                                       |
 
 Exports include deployment steps as `{ step, command }` async functions, `deploy(steps)`, and optional `inventory` + `group` on the constructor for multi-host sequential deploys.
 
@@ -89,12 +89,12 @@ End-user CLI details belong in [GUIDELINES.md](./GUIDELINES.md) and [README.md](
 
 ## Features aligned with the Daffodil family
 
-| Feature | JSDaffodil notes |
-| ------- | ---------------- |
-| `.daffodil.yml` | Same shape as Python/Go: `steps`, optional `hosts`, `watch`, `inventoryFile`, `inventoryGroup` |
-| `inventory.ini` | `parseInventoryFile`; CLI uses `inventoryFile` + `inventoryGroup` |
-| Host precedence (CLI) | `hosts` → inventory → default `remoteHost` / `remoteUser` |
-| `watch()` | API + YAML CLI `--watch` with `watch:` block |
+| Feature               | JSDaffodil notes                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
+| `.daffodil.yml`       | Same shape as Python/Go: `steps`, optional `hosts`, `watch`, `inventoryFile`, `inventoryGroup` |
+| `inventory.ini`       | `parseInventoryFile`; CLI uses `inventoryFile` + `inventoryGroup`                              |
+| Host precedence (CLI) | `hosts` → inventory → default `remoteHost` / `remoteUser`                                      |
+| `watch()`             | API + YAML CLI `--watch` with `watch:` block                                                   |
 
 ## Development setup
 

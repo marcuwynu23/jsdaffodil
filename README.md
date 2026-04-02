@@ -34,11 +34,11 @@
 
 The **Daffodil** line shares the same ideas: SSH, archive transfer, `.scpignore`, `watch()` (files + Git), Ansible-style **`inventory.ini`**, and a shared **`.daffodil.yml`** schema for the official CLIs.
 
-| Project | Language | Install | YAML CLI |
-|---------|----------|---------|----------|
-| **JSDaffodil** (this repo) | Node.js | [`@marcuwynu23/jsdaffodil`](https://www.npmjs.com/package/@marcuwynu23/jsdaffodil) · [source](https://github.com/marcuwynu23/jsdaffodil) | `jsdaffodil --config .daffodil.yml` |
-| **PyDaffodil** | Python | [`pydaffodil`](https://pypi.org/project/pydaffodil/) · [source](https://github.com/marcuwynu23/pydaffodil) | `pydaffodil --config .daffodil.yml` |
-| **GoDaffodil** | Go | [module](https://github.com/marcuwynu23/godaffodil) | `godaffodil run --config .daffodil.yml` |
+| Project                    | Language | Install                                                                                                                                  | YAML CLI                                |
+| -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **JSDaffodil** (this repo) | Node.js  | [`@marcuwynu23/jsdaffodil`](https://www.npmjs.com/package/@marcuwynu23/jsdaffodil) · [source](https://github.com/marcuwynu23/jsdaffodil) | `jsdaffodil --config .daffodil.yml`     |
+| **PyDaffodil**             | Python   | [`pydaffodil`](https://pypi.org/project/pydaffodil/) · [source](https://github.com/marcuwynu23/pydaffodil)                               | `pydaffodil --config .daffodil.yml`     |
+| **GoDaffodil**             | Go       | [module](https://github.com/marcuwynu23/godaffodil)                                                                                      | `godaffodil run --config .daffodil.yml` |
 
 Use **`--watch`** with each CLI when your YAML defines a `watch:` block (Go uses `godaffodil run … --watch`).
 

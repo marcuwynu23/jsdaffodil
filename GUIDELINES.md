@@ -43,8 +43,7 @@ const deployer = new Daffodil({
 const steps = [
   {
     step: "Upload",
-    command: async () =>
-      deployer.transferFiles("./dist", "/var/www/app"),
+    command: async () => deployer.transferFiles("./dist", "/var/www/app"),
   },
   {
     step: "Reload",
@@ -61,21 +60,21 @@ await deployer.deploy(steps);
 
 ### Single-host constructor
 
-| Option | Description |
-| ------ | ----------- |
-| `remoteUser` | SSH username (required) |
-| `remoteHost` | Hostname or IP (required) |
-| `remotePath` | Default remote path (default `"."`) |
-| `port` | SSH port (default `22`) |
+| Option       | Description                             |
+| ------------ | --------------------------------------- |
+| `remoteUser` | SSH username (required)                 |
+| `remoteHost` | Hostname or IP (required)               |
+| `remotePath` | Default remote path (default `"."`)     |
+| `port`       | SSH port (default `22`)                 |
 | `ignoreFile` | Ignore file path (default `.scpignore`) |
-| `verbose` | Verbose logging (default `false`) |
+| `verbose`    | Verbose logging (default `false`)       |
 
 ### Inventory (multi-host)
 
-| Option | Description |
-| ------ | ----------- |
-| `inventory` | Path to `inventory.ini` |
-| `group` | Section name (e.g. `webservers`) |
+| Option      | Description                      |
+| ----------- | -------------------------------- |
+| `inventory` | Path to `inventory.ini`          |
+| `group`     | Section name (e.g. `webservers`) |
 
 When `inventory` is set, hosts come from the file; `remoteUser` / `remoteHost` are not used as the single target.
 
@@ -167,14 +166,14 @@ Patterns exclude files from packaged transfers (e.g. `node_modules/`, `.env`, `.
 
 ## Troubleshooting
 
-| Issue | What to check |
-| ----- | ---------------- |
-| SSH auth failures | Keys in `~/.ssh`, `ssh-copy-id`, permissions (`chmod 600` on private keys) |
-| Connection timeout | Firewall, correct `port`, host reachable |
-| Transfer “path does not exist” | Local path exists; `.scpignore` not excluding needed files |
-| Inventory empty / wrong group | Section name matches `group`; each line has `host=` and `user=` |
-| `watch()` never triggers | `paths` or `repoPath` set; `repoPath` is a valid repo; `interval` / `debounce` reasonable |
-| CLI “no hosts” | Define `hosts`, or `inventoryFile` + `inventoryGroup`, or `remoteHost` + `remoteUser` |
+| Issue                          | What to check                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------- |
+| SSH auth failures              | Keys in `~/.ssh`, `ssh-copy-id`, permissions (`chmod 600` on private keys)                |
+| Connection timeout             | Firewall, correct `port`, host reachable                                                  |
+| Transfer “path does not exist” | Local path exists; `.scpignore` not excluding needed files                                |
+| Inventory empty / wrong group  | Section name matches `group`; each line has `host=` and `user=`                           |
+| `watch()` never triggers       | `paths` or `repoPath` set; `repoPath` is a valid repo; `interval` / `debounce` reasonable |
+| CLI “no hosts”                 | Define `hosts`, or `inventoryFile` + `inventoryGroup`, or `remoteHost` + `remoteUser`     |
 
 ## Additional resources
 
