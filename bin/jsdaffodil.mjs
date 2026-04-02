@@ -7,10 +7,29 @@ import { Daffodil } from "../src/index.js";
 function loadConfig(configPath) {
   const full = path.resolve(configPath);
   const raw = fs.readFileSync(full, "utf8");
-  return yaml.load(raw) || {};
+  const cfg = yaml.load(raw) || {};
+  cfg.__configDir = path.dirname(full);
+  return cfg;
+}
+
+function loadInventoryHosts(config) {
+  const inventoryFile = config.inventoryFile || config.inventoryYml;
+  if (!inventoryFile) return [];
+  const fullPath = path.isAbsolute(inventoryFile)
+    ? inventoryFile
+    : path.join(config.__configDir || process.cwd(), inventoryFile);
+  const raw = fs.readFileSync(fullPath, "utf8");
+  const inv = yaml.load(raw) || {};
+  if (Array.isArray(inv.hosts)) return inv.hosts;
+  if (inv.groups && config.inventoryGroup && Array.isArray(inv.groups[config.inventoryGroup])) {
+    return inv.groups[config.inventoryGroup];
+  }
+  return [];
 }
 
 function normalizeHosts(config) {
+  const inventoryHosts = loadInventoryHosts(config);
+  if (inventoryHosts.length > 0) return inventoryHosts;
   if (Array.isArray(config.hosts) && config.hosts.length > 0) return config.hosts;
   if (config.remoteHost && config.remoteUser) {
     return [
