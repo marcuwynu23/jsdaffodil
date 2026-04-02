@@ -495,6 +495,8 @@ jsdaffodil --config samples/.daffodil.yml --watch
 
 Use `samples/.daffodil.yml` as the reference schema (single-host or `hosts[]` multi-host). The filename is required to be exactly `.daffodil.yml`.
 
+**Other official CLIs (same YAML):** [PyDaffodil](https://pypi.org/project/pydaffodil/) uses `pydaffodil --config`; [GoDaffodil](https://github.com/marcuwynu23/godaffodil) uses `godaffodil run --config` (no other subcommands).
+
 You can also reference a separate inventory file:
 
 ```yaml
