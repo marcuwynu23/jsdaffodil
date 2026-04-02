@@ -13,7 +13,7 @@
 
 ## Overview
 
-**JSDaffodil** is a lightweight, declarative deployment automation framework for Node.js that simplifies remote server deployments through SSH. Inspired by [pydaffodil](https://pypi.org/project/pydaffodil/), it provides a clean, step-by-step API for executing deployment tasks on remote servers.
+**JSDaffodil** is the **Node.js** implementation in the Daffodil family. It simplifies remote deployments over SSH with a step-by-step API, archive-based transfer, optional `watch()` triggers, and multi-host **`inventory.ini`** support—the same concepts as [PyDaffodil](https://pypi.org/project/pydaffodil/) (Python) and [GoDaffodil](https://github.com/marcuwynu23/godaffodil) (Go). See **[Sister projects](#sister-projects)** for links and CLI equivalents.
 
 ### Key Features
 
@@ -27,6 +27,20 @@
 - **Zero External Dependencies** - Pure Node.js implementation for archive creation
 - **Watch-Based CI/CD (`watch()`)** - Automatically trigger deployments on local file changes or Git events (commits, merges, tags)
 - **Multi-Host Deployments via `inventory.ini`** - Run the same deployment steps across multiple servers defined in an inventory file
+
+---
+
+## Sister projects
+
+The **Daffodil** line shares the same ideas: SSH, archive transfer, `.scpignore`, `watch()` (files + Git), Ansible-style **`inventory.ini`**, and a shared **`.daffodil.yml`** schema for the official CLIs.
+
+| Project | Language | Install | YAML CLI |
+|---------|----------|---------|----------|
+| **JSDaffodil** (this repo) | Node.js | [`@marcuwynu23/jsdaffodil`](https://www.npmjs.com/package/@marcuwynu23/jsdaffodil) · [source](https://github.com/marcuwynu23/jsdaffodil) | `jsdaffodil --config .daffodil.yml` |
+| **PyDaffodil** | Python | [`pydaffodil`](https://pypi.org/project/pydaffodil/) · [source](https://github.com/marcuwynu23/pydaffodil) | `pydaffodil --config .daffodil.yml` |
+| **GoDaffodil** | Go | [module](https://github.com/marcuwynu23/godaffodil) | `godaffodil run --config .daffodil.yml` |
+
+Use **`--watch`** with each CLI when your YAML defines a `watch:` block (Go uses `godaffodil run … --watch`).
 
 ---
 
@@ -493,9 +507,7 @@ jsdaffodil --config samples/.daffodil.yml
 jsdaffodil --config samples/.daffodil.yml --watch
 ```
 
-Use `samples/.daffodil.yml` as the reference schema (single-host or `hosts[]` multi-host). The filename is required to be exactly `.daffodil.yml`.
-
-**Other official CLIs (same YAML):** [PyDaffodil](https://pypi.org/project/pydaffodil/) uses `pydaffodil --config`; [GoDaffodil](https://github.com/marcuwynu23/godaffodil) uses `godaffodil run --config` (no other subcommands).
+Use `samples/.daffodil.yml` as the reference schema (single-host or `hosts[]` multi-host). The filename is required to be exactly `.daffodil.yml`. The same schema works with **PyDaffodil** and **GoDaffodil**—see **[Sister projects](#sister-projects)**.
 
 You can also reference a separate inventory file:
 
@@ -522,7 +534,7 @@ For developers, see [DOCUMENTATION.md](./DOCUMENTATION.md) for architecture deta
 
 ## Acknowledgments
 
-Inspired by [pydaffodil](https://pypi.org/project/pydaffodil/) - a Python deployment automation framework.
+Part of the **Daffodil** family alongside [PyDaffodil](https://pypi.org/project/pydaffodil/) and [GoDaffodil](https://github.com/marcuwynu23/godaffodil)—see **[Sister projects](#sister-projects)**.
 
 ---
 
