@@ -498,7 +498,7 @@ Use `samples/.daffodil.yml` as the reference schema (single-host or `hosts[]` mu
 You can also reference a separate inventory file:
 
 ```yaml
-inventoryFile: inventory.yml
+inventoryFile: inventory.ini
 inventoryGroup: webservers
 ```
 
