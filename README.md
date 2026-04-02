@@ -484,6 +484,19 @@ See `samples/inventory-sample.mjs` and `samples/inventory-sample.cjs` for full e
 
 ---
 
+## YAML CLI Deployment
+
+JSDaffodil now includes a CLI entrypoint with YAML config support.
+
+```bash
+jsdaffodil --config samples/.daffodil.yml
+jsdaffodil --config samples/.daffodil.yml --watch
+```
+
+Use `samples/.daffodil.yml` as the reference schema (single-host or `hosts[]` multi-host). The filename is required to be exactly `.daffodil.yml`.
+
+---
+
 ## Contributing
 
 Contributions are welcome! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) guide for contribution guidelines, code review process, and best practices.

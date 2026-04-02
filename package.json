@@ -8,11 +8,14 @@
     "require": "./src/index.cjs"
   },
   "type": "module",
+  "bin": {
+    "jsdaffodil": "./bin/jsdaffodil.mjs"
+  },
   "scripts": {
     "sample:esm": "node samples/sample.mjs",
     "sample:common": "node samples/sample.cjs",
     "sample": "npm run sample:esm && npm run sample:common",
-    "test:esm": "node tests/esm/test-daffodil.mjs && node tests/esm/test-watch.mjs",
+    "test:esm": "node tests/esm/test-daffodil.mjs && node tests/esm/test-watch.mjs && node tests/esm/test-cli.mjs",
     "test:common": "node tests/commonjs/test-daffodil.cjs && node tests/commonjs/test-watch.cjs",
     "test": "npm run test:esm && npm run test:common",
     "format": "prettier --write \"src/**/*.{js,mjs,cjs,json,md}\" \"*.{js,json,md}\"",
@@ -63,6 +66,7 @@
     "cli-progress": "^3.12.0",
     "fs-extra": "^11.3.0",
     "inquirer": "^12.6.3",
+    "js-yaml": "^4.1.0",
     "node-ssh": "^13.2.1",
     "ora": "^8.2.0",
     "tar": "^7.5.2"
