@@ -2,7 +2,7 @@
 import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
-import { Daffodil } from "../src/index.js";
+import { Daffodil, parseInventoryFile } from "../src/index.js";
 
 function loadConfig(configPath) {
   const full = path.resolve(configPath);
@@ -18,19 +18,14 @@ function loadInventoryHosts(config) {
   const fullPath = path.isAbsolute(inventoryFile)
     ? inventoryFile
     : path.join(config.__configDir || process.cwd(), inventoryFile);
-  const raw = fs.readFileSync(fullPath, "utf8");
-  const inv = yaml.load(raw) || {};
-  if (Array.isArray(inv.hosts)) return inv.hosts;
-  if (inv.groups && config.inventoryGroup && Array.isArray(inv.groups[config.inventoryGroup])) {
-    return inv.groups[config.inventoryGroup];
-  }
-  return [];
+  const group = config.inventoryGroup || config.inventory_group || null;
+  return parseInventoryFile(fullPath, group);
 }
 
 function normalizeHosts(config) {
+  if (Array.isArray(config.hosts) && config.hosts.length > 0) return config.hosts;
   const inventoryHosts = loadInventoryHosts(config);
   if (inventoryHosts.length > 0) return inventoryHosts;
-  if (Array.isArray(config.hosts) && config.hosts.length > 0) return config.hosts;
   if (config.remoteHost && config.remoteUser) {
     return [
       {

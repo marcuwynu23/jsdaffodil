@@ -74,18 +74,18 @@ test("CLI fails for unsupported step type", () => {
   fs.removeSync(dir);
 });
 
-test("CLI reads hosts from inventory.yml reference", () => {
+test("CLI reads hosts from inventory.ini reference", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jsdaffodil-cli-"));
   const cfg = path.join(dir, ".daffodil.yml");
-  const inv = path.join(dir, "inventory.yml");
+  const inv = path.join(dir, "inventory.ini");
   fs.writeFileSync(
     inv,
-    `hosts:\n  - name: web1\n    host: 127.0.0.1\n    user: deploy\n`,
+    `[webservers]\nweb1 host=127.0.0.1 user=deploy port=22\n`,
     "utf8"
   );
   fs.writeFileSync(
     cfg,
-    `inventoryFile: inventory.yml\nsteps:\n  - name: Invalid\n    type: unknown\n`,
+    `inventoryFile: inventory.ini\ninventoryGroup: webservers\nsteps:\n  - name: Invalid\n    type: unknown\n`,
     "utf8"
   );
   const res = runCli(["--config", cfg]);
@@ -93,6 +93,23 @@ test("CLI reads hosts from inventory.yml reference", () => {
   assert(
     (res.stderr || "").includes("Unsupported step type"),
     "Expected parser to load inventory and proceed to step validation"
+  );
+  fs.removeSync(dir);
+});
+
+test("CLI prefers hosts over inventory when hosts are provided", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "jsdaffodil-cli-"));
+  const cfg = path.join(dir, ".daffodil.yml");
+  fs.writeFileSync(
+    cfg,
+    `hosts:\n  - name: web1\n    host: 127.0.0.1\n    user: deploy\ninventoryFile: missing.ini\nsteps:\n  - name: Invalid\n    type: unknown\n`,
+    "utf8"
+  );
+  const res = runCli(["--config", cfg]);
+  assert(res.status !== 0, "Expected non-zero exit code");
+  assert(
+    (res.stderr || "").includes("Unsupported step type"),
+    "Expected CLI to continue with hosts even when inventory is invalid"
   );
   fs.removeSync(dir);
 });

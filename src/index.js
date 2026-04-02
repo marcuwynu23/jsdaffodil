@@ -59,7 +59,7 @@ export class DeploymentError extends Error {
  *   server1 host=1.2.3.4 user=deployer port=22
  *   server2 host=1.2.3.5 user=ubuntu
  */
-function parseInventoryFile(inventoryPath, group) {
+export function parseInventoryFile(inventoryPath, group) {
   const content = fs.readFileSync(inventoryPath, "utf8");
   const lines = content.split(/\r?\n/);
   let currentGroup = null;
