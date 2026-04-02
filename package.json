@@ -69,7 +69,7 @@
     "js-yaml": "^4.1.0",
     "node-ssh": "^13.2.1",
     "ora": "^8.2.0",
-    "tar": "^7.5.2"
+    "tar": "^7.5.3"
   },
   "devDependencies": {
     "auto-changelog": "^2.5.0",
