@@ -1,8 +1,8 @@
-# 🤝 Contributing to JSDaffodil
+# Contributing to JSDaffodil
 
 Welcome to the JSDaffodil contribution guide! This document outlines how to contribute, collaborate, and work effectively with the JSDaffodil project.
 
-## 📚 Documentation Overview
+## Documentation Overview
 
 This project includes comprehensive documentation to help you get started:
 
@@ -10,7 +10,7 @@ This project includes comprehensive documentation to help you get started:
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** - **Developer documentation** for contributing, extending, and developing the project. Covers architecture, code organization, testing, and extension points.
 - **[README.md](./README.md)** - Quick start and overview for end users
 
-## 🎯 Getting Started
+## Getting Started
 
 Before contributing, please:
 
@@ -29,7 +29,7 @@ Before contributing, please:
    - Run tests: `npm test`
    - Review the development setup in [DOCUMENTATION.md](./DOCUMENTATION.md)
 
-## 🔄 Contribution Workflow
+## Contribution Workflow
 
 ### 1. Fork and Clone
 
@@ -89,7 +89,7 @@ Then create a Pull Request on GitHub with:
 - Screenshots/examples if applicable
 - Updated CHANGELOG.md entry
 
-## 📋 Code Review Guidelines
+## Code Review Guidelines
 
 ### For Contributors
 
@@ -108,7 +108,7 @@ Then create a Pull Request on GitHub with:
 - Verify tests pass
 - Ensure documentation is updated
 
-## 🐛 Reporting Issues
+## Reporting Issues
 
 When reporting issues, please include:
 
@@ -120,7 +120,7 @@ When reporting issues, please include:
 6. **Code Example** - Minimal code that reproduces the issue
 7. **Error Messages** - Full error output (with verbose mode if applicable)
 
-## 💡 Feature Requests
+## Feature Requests
 
 For feature requests:
 
@@ -129,7 +129,7 @@ For feature requests:
 3. Describe the use case and benefits
 4. Provide examples if possible
 
-## 🧪 Testing
+## Testing
 
 Before submitting PRs:
 
@@ -146,7 +146,7 @@ npm run test:common
 
 Ensure all tests pass and add tests for new features.
 
-## 📝 Documentation
+## Documentation
 
 When contributing:
 
@@ -155,7 +155,7 @@ When contributing:
 - Keep code comments clear and helpful
 - Update [CHANGELOG.md](./CHANGELOG.md) with your changes
 
-## 🎨 Code Style
+## Code Style
 
 - Follow existing code style
 - Use meaningful variable names
@@ -164,21 +164,21 @@ When contributing:
 - Handle errors appropriately
 - Follow the `.editorconfig` and `.prettierrc` settings
 
-## 🔐 Security
+## Security
 
 - Never commit sensitive information (SSH keys, passwords, etc.)
 - Report security vulnerabilities privately to the maintainers
 - Follow security best practices
 - Review dependencies regularly
 
-## 📞 Communication
+## Communication
 
 - Use GitHub Issues for bug reports and feature requests
 - Use GitHub Discussions for questions and ideas
 - Be respectful and constructive in all communications
 - Help others learn and contribute
 
-## 🏆 Recognition
+## Recognition
 
 Contributors will be:
 
@@ -186,7 +186,7 @@ Contributors will be:
 - Credited in release notes
 - Appreciated by the community!
 
-## 📖 Additional Resources
+## Additional Resources
 
 - **Usage Guide**: See [GUIDELINES.md](./GUIDELINES.md) for comprehensive usage examples, best practices, and troubleshooting. The guide includes sample code from the `src/samples/` directory.
 - **Developer Guide**: See [DOCUMENTATION.md](./DOCUMENTATION.md) for complete architecture documentation, development setup, code organization, testing guidelines, and extension points.
@@ -194,7 +194,7 @@ Contributors will be:
   - `src/samples/sample.mjs` - ESM module example
   - `src/samples/sample.cjs` - CommonJS module example
 
-## ❓ Questions?
+## Questions?
 
 If you have questions:
 
@@ -205,4 +205,4 @@ If you have questions:
 
 ---
 
-Thank you for contributing to JSDaffodil! 🌼
+Thank you for contributing to JSDaffodil!
