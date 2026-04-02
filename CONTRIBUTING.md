@@ -6,7 +6,7 @@ Welcome to the JSDaffodil contribution guide! This document outlines how to cont
 
 This project includes comprehensive documentation to help you get started:
 
-- **[GUIDELINES.md](./GUIDELINES.md)** - **Complete usage guide** with comprehensive examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `src/samples/` directory.
+- **[GUIDELINES.md](./GUIDELINES.md)** - **Complete usage guide** with comprehensive examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `samples/` directory.
 - **[DOCUMENTATION.md](./DOCUMENTATION.md)** - **Developer documentation** for contributing, extending, and developing the project. Covers architecture, code organization, testing, and extension points.
 - **[README.md](./README.md)** - Quick start and overview for end users
 
@@ -20,7 +20,7 @@ Before contributing, please:
    - Check [README.md](./README.md) for quick reference
 
 2. **Explore the Codebase**
-   - Check the `src/samples/` directory for usage examples
+   - Check the `samples/` directory for usage examples
    - Review `src/index.js` for the main implementation
    - Understand the project structure
 
@@ -188,11 +188,11 @@ Contributors will be:
 
 ## Additional Resources
 
-- **Usage Guide**: See [GUIDELINES.md](./GUIDELINES.md) for comprehensive usage examples, best practices, and troubleshooting. The guide includes sample code from the `src/samples/` directory.
+- **Usage Guide**: See [GUIDELINES.md](./GUIDELINES.md) for comprehensive usage examples, best practices, and troubleshooting. The guide includes sample code from the `samples/` directory.
 - **Developer Guide**: See [DOCUMENTATION.md](./DOCUMENTATION.md) for complete architecture documentation, development setup, code organization, testing guidelines, and extension points.
-- **Examples**: Check the `src/samples/` directory for working examples:
-  - `src/samples/sample.mjs` - ESM module example
-  - `src/samples/sample.cjs` - CommonJS module example
+- **Examples**: Check the `samples/` directory for working examples:
+  - `samples/sample.mjs` - ESM module example
+  - `samples/sample.cjs` - CommonJS module example
 
 ## Questions?
 
