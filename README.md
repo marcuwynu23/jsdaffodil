@@ -15,6 +15,16 @@
 
 **JSDaffodil** is the **Node.js** implementation in the Daffodil family. It simplifies remote deployments over SSH with a step-by-step API, archive-based transfer, optional `watch()` triggers, and multi-host **`inventory.ini`** support—the same concepts as [PyDaffodil](https://pypi.org/project/pydaffodil/) (Python) and [GoDaffodil](https://github.com/marcuwynu23/godaffodil) (Go). See **[Sister projects](#sister-projects)** for links and CLI equivalents.
 
+### What are Daffodil tools?
+
+**Daffodil tools** are the three sibling deployment projects:
+
+- **JSDaffodil** for Node.js
+- **PyDaffodil** for Python
+- **GoDaffodil** for Go
+
+All three share the same core workflow: define deployment steps, transfer files as archives, run commands over SSH, support `.scpignore`, scale to multiple hosts using `inventory.ini`, and use the same `.daffodil.yml` schema for CLI-driven deployments.
+
 ### Key Features
 
 - **Archive-Based File Transfer** - Efficient tar.gz compression for fast bulk file transfers
@@ -46,13 +56,20 @@ Use **`--watch`** with each CLI when your YAML defines a `watch:` block (Go uses
 
 ## Documentation
 
-This project includes comprehensive documentation:
+| Resource | Description |
+| -------- | ----------- |
+| [GUIDELINES.md](./GUIDELINES.md) | Usage: API, `inventory.ini`, `.daffodil.yml` CLI, `watch()`, troubleshooting |
+| [DOCUMENTATION.md](./DOCUMENTATION.md) | Developers: architecture, package layout, tests |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution workflow and PR expectations |
+| [LICENSE](./LICENSE) | MIT License |
 
-- **[GUIDELINES.md](./GUIDELINES.md)** - Complete usage guide with examples, best practices, troubleshooting, and real-world scenarios. Includes sample code from the `samples/` directory.
-- **[DOCUMENTATION.md](./DOCUMENTATION.md)** - Developer documentation covering architecture, code organization, testing, and extension points for contributors.
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Contribution guidelines, code review process, and collaboration best practices.
+Aligned with [PyDaffodil](https://github.com/marcuwynu23/pydaffodil) and [GoDaffodil](https://github.com/marcuwynu23/godaffodil) documentation set.
 
-For quick examples, check the `samples/` directory:
+---
+
+## Documentation and Examples
+
+For quick examples, check the **`samples/`** directory:
 
 - `samples/sample.mjs` - ESM module example
 - `samples/sample.cjs` - CommonJS module example
@@ -198,7 +215,7 @@ Executes a series of deployment steps sequentially.
 
 - **`steps`** (Array): Array of step objects with `step` (description) and `command` (async function)
 
--#### `watch(options)`
+#### `watch(options)`
 
 Creates a watcher that can trigger deployments based on file system or Git changes. Returns an internal watcher with a `.deploy(steps)` method.
 
@@ -508,6 +525,36 @@ jsdaffodil --config samples/.daffodil.yml --watch
 ```
 
 Use `samples/.daffodil.yml` as the reference schema (single-host or `hosts[]` multi-host). The filename is required to be exactly `.daffodil.yml`. The same schema works with **PyDaffodil** and **GoDaffodil**—see **[Sister projects](#sister-projects)**.
+
+### Example `.daffodil.yml`
+
+```yaml
+remotePath: /var/www/myapp
+ignoreFile: .scpignore
+verbose: false
+inventoryFile: inventory.ini
+inventoryGroup: webservers
+steps:
+  - name: Build app
+    type: local
+    command: npm run build
+  - name: Upload dist
+    type: transfer
+    localPath: dist
+    destinationPath: /var/www/myapp
+  - name: Restart app
+    type: ssh
+    command: pm2 restart myapp
+watch:
+  paths: ["./dist", "./src"]
+  repoPath: .
+  branch: main
+  events: ["commit", "merge", "tag"]
+  tags: true
+  tagPattern: "^v\\d+\\.\\d+\\.\\d+$"
+  interval: 5000
+  debounce: 2000
+```
 
 You can also reference a separate inventory file:
 
