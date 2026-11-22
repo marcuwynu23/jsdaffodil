@@ -1,11 +1,68 @@
 import chalk from "chalk";
 import { execSync } from "child_process";
 import cliProgress from "cli-progress";
+import crypto from "crypto";
 import fs from "fs-extra";
 import { NodeSSH } from "node-ssh";
 import ora from "ora";
+import os from "os";
 import path from "path";
 import * as tar from "tar";
+
+function sha256Hex(data) {
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
+
+function hashFileContents(filePath) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash("sha256");
+    const stream = fs.createReadStream(filePath);
+    stream.on("error", reject);
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.on("end", () => resolve(hash.digest("hex")));
+  });
+}
+
+function appendLineOnce(content, line) {
+  const lines = content.split("\n");
+  if (lines.some((existing) => existing.replace(/\r$/, "") === line)) {
+    return content;
+  }
+  if (content === "") return `${line}\n`;
+  return content.endsWith("\n")
+    ? `${content}${line}\n`
+    : `${content}\n${line}\n`;
+}
+
+function applyManagedBlock(content, marker, line) {
+  const begin = marker.includes("{mark}")
+    ? marker.replace("{mark}", "BEGIN")
+    : `${marker} BEGIN`;
+  const end = marker.includes("{mark}")
+    ? marker.replace("{mark}", "END")
+    : `${marker} END`;
+  const block = `${begin}\n${line}\n${end}`;
+  const lines = content.split("\n");
+  const beginIdx = lines.findIndex(
+    (existing) => existing.replace(/\r$/, "") === begin
+  );
+  if (beginIdx !== -1) {
+    let endIdx = -1;
+    for (let i = beginIdx + 1; i < lines.length; i++) {
+      if (lines[i].replace(/\r$/, "") === end) {
+        endIdx = i;
+        break;
+      }
+    }
+    const tail = endIdx !== -1 ? lines.slice(endIdx + 1) : [];
+    return [...lines.slice(0, beginIdx), ...block.split("\n"), ...tail].join(
+      "\n"
+    );
+  }
+  if (content === "") return `${block}\n`;
+  const prefix = content.endsWith("\n") ? content : `${content}\n`;
+  return `${prefix}${block}\n`;
+}
 
 /**
  * Custom error class for file/directory not found errors
@@ -119,6 +176,8 @@ export class Daffodil {
     verbose = false,
     inventory,
     group,
+    check = false,
+    sshKeyPath = null,
   }) {
     const usingInventory = Boolean(inventory);
     // Validate required parameters
@@ -142,6 +201,10 @@ export class Daffodil {
     this.ignoreFile = ignoreFile;
     this.excludeList = this.loadIgnoreList();
     this.verbose = verbose;
+    this.check = Boolean(check);
+    this.sshKeyPath = sshKeyPath || null;
+    this._remoteHome = null;
+    this._remoteHomeKey = null;
 
     // Multi-host inventory support
     this.inventory = inventory || null;
@@ -179,9 +242,15 @@ export class Daffodil {
    * Set options for the deployer
    * @param {Object} options - Options object
    * @param {boolean} options.verbose - Enable verbose logging (default: false)
+   * @param {boolean} options.check - Enable check (dry-run) mode (no remote mutations)
    */
-  setOption({ verbose = false }) {
-    this.verbose = verbose;
+  setOption(options = {}) {
+    if (typeof options.verbose === "boolean") {
+      this.verbose = options.verbose;
+    }
+    if (typeof options.check === "boolean") {
+      this.check = options.check;
+    }
   }
 
   /**
@@ -325,8 +394,23 @@ export class Daffodil {
     const startTime = Date.now();
     const spinner = ora(`Connecting to ${this.remoteHost}`).start();
     const homeDir = process.env.HOME || process.env.USERPROFILE;
-    const keyFiles = ["id_rsa", "id_ed25519", "id_ecdsa", "id_dsa"];
+    const defaultKeyFiles = ["id_rsa", "id_ed25519", "id_ecdsa", "id_dsa"];
     const failures = [];
+
+    const candidates = [];
+    if (this.sshKeyPath) {
+      candidates.push({
+        label: this.sshKeyPath,
+        keyPath: path.resolve(this.sshKeyPath),
+      });
+    } else {
+      for (const keyFile of defaultKeyFiles) {
+        candidates.push({
+          label: keyFile,
+          keyPath: path.join(homeDir, ".ssh", keyFile),
+        });
+      }
+    }
 
     if (this.verbose) {
       this.log(
@@ -336,12 +420,12 @@ export class Daffodil {
       this.log(`Trying SSH keys from: ${homeDir}\\.ssh`, "blue");
     }
 
-    for (const keyFile of keyFiles) {
-      const keyPath = path.join(homeDir, ".ssh", keyFile);
+    for (const candidate of candidates) {
+      const keyPath = candidate.keyPath;
       if (fs.existsSync(keyPath)) {
         try {
           if (this.verbose) {
-            this.log(`Trying SSH key: ${keyFile}`, "blue");
+            this.log(`Trying SSH key: ${candidate.label}`, "blue");
           }
           await this.ssh.connect({
             host: this.remoteHost,
@@ -349,22 +433,31 @@ export class Daffodil {
             port: this.port,
             privateKey: fs.readFileSync(keyPath, "utf8"),
           });
-          spinner.succeed(chalk.green(`SSH Connected using key: ${keyFile}`));
+          spinner.succeed(
+            chalk.green(`SSH Connected using key: ${candidate.label}`)
+          );
           this.logTimeConsumption("SSH Connection", startTime);
 
           const ensurePath = path.posix.resolve(this.remotePath);
-          await this.ssh.execCommand(
-            `mkdir -p ${this.escapeShellArg(ensurePath)}`
-          );
-          this.log(`Verified or created remote path: ${ensurePath}`, "blue");
+          if (!this.check) {
+            await this.ssh.execCommand(
+              `mkdir -p ${this.escapeShellArg(ensurePath)}`
+            );
+            this.log(`Verified or created remote path: ${ensurePath}`, "blue");
+          } else {
+            this.log(
+              `Check mode: skipped verifying remote path: ${ensurePath}`,
+              "blue"
+            );
+          }
           return; // ✅ Success, skip remaining
         } catch (err) {
           const errorMsg = this.verbose
             ? err.message
             : this.getHumanReadableError(err);
-          failures.push({ key: keyFile, error: errorMsg });
+          failures.push({ key: candidate.label, error: errorMsg });
           if (this.verbose) {
-            this.logError(`Failed to connect with key ${keyFile}`, err);
+            this.logError(`Failed to connect with key ${candidate.label}`, err);
           }
         }
       }
@@ -441,6 +534,11 @@ export class Daffodil {
 
   async sshCommand(cmd) {
     const startTime = Date.now();
+    if (this.check) {
+      // Check mode must never mutate the remote host: raw commands are skipped.
+      this.log(`Check mode: skipped remote command: ${cmd}`, "yellow");
+      return { status: "skipped", changed: false };
+    }
     if (this.verbose) {
       this.log(`Executing SSH command: ${cmd}`, "blue");
     }
@@ -460,6 +558,7 @@ export class Daffodil {
       }
     }
     this.logTimeConsumption(`SSH command: ${cmd}`, startTime);
+    return { status: "ok", changed: false };
   }
 
   /**
@@ -472,13 +571,452 @@ export class Daffodil {
 
   async makeDirectory(dirName) {
     const startTime = Date.now();
-    const fullPath = path.posix.join(this.remotePath, dirName);
-    this.log(`Creating remote directory: ${fullPath}`, "blue");
-    await this.sshCommand(`mkdir -p ${this.escapeShellArg(fullPath)}`);
-    this.logTimeConsumption(`Create directory: ${fullPath}`, startTime);
+    this.log(`Ensuring remote directory: ${dirName}`, "blue");
+    const result = await this.ensureDirectory(dirName);
+    this.logTimeConsumption(`Create directory: ${dirName}`, startTime);
+    return result;
   }
 
-  async transferFiles(localPath, destinationPath = this.remotePath) {
+  /**
+   * Run a command on the remote host and capture its output.
+   * @param {string} command
+   * @returns {Promise<{code: number, stdout: string, stderr: string}>}
+   */
+  async _exec(command) {
+    const result = await this.ssh.execCommand(command);
+    return {
+      code: typeof result.code === "number" ? result.code : 0,
+      stdout: typeof result.stdout === "string" ? result.stdout : "",
+      stderr: typeof result.stderr === "string" ? result.stderr : "",
+    };
+  }
+
+  /**
+   * Resolve a remote path: expands `~`, keeps absolute paths, and joins
+   * relative paths to the configured remote path.
+   */
+  async _resolveRemotePath(targetPath) {
+    const raw = String(targetPath ?? "").trim();
+    if (!raw) throw new Error("path is required");
+    if (raw === "~" || raw.startsWith("~/")) {
+      const home = await this._getRemoteHome();
+      return raw === "~" ? home : `${home}/${raw.slice(2)}`;
+    }
+    if (raw.startsWith("/")) return raw;
+    return path.posix.join(this.remotePath, raw);
+  }
+
+  async _getRemoteHome() {
+    const key = `${this.remoteUser}@${this.remoteHost}:${this.port}`;
+    if (this._remoteHome && this._remoteHomeKey === key) {
+      return this._remoteHome;
+    }
+    const result = await this._exec(`printf '%s' "$HOME"`);
+    const home = result.stdout.trim();
+    if (!home) {
+      throw new Error("Unable to determine remote home directory");
+    }
+    this._remoteHome = home;
+    this._remoteHomeKey = key;
+    return home;
+  }
+
+  async _readRemoteFile(targetPath) {
+    const esc = this.escapeShellArg(targetPath);
+    const result = await this._exec(
+      `if [ -f ${esc} ]; then cat ${esc}; else exit 3; fi`
+    );
+    if (result.code === 3) return { exists: false, content: "" };
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to read remote file ${targetPath}: ${
+          result.stderr || result.stdout || `exit ${result.code}`
+        }`
+      );
+    }
+    return { exists: true, content: result.stdout };
+  }
+
+  async _writeRemoteFile(targetPath, content) {
+    const dir = path.posix.dirname(targetPath);
+    if (dir && dir !== ".") {
+      const mkdirResult = await this._exec(
+        `mkdir -p ${this.escapeShellArg(dir)}`
+      );
+      if (mkdirResult.code !== 0) {
+        throw new Error(
+          `Failed to create remote directory ${dir}: ${mkdirResult.stderr}`
+        );
+      }
+    }
+    const tmpPath = path.join(
+      os.tmpdir(),
+      `daffodil-${process.pid}-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 10)}`
+    );
+    await fs.writeFile(tmpPath, content, "utf8");
+    try {
+      await this.ssh.putFile(tmpPath, targetPath);
+    } finally {
+      await fs.remove(tmpPath).catch(() => {});
+    }
+  }
+
+  async _remoteFileHash(targetPath) {
+    const esc = this.escapeShellArg(targetPath);
+    const result = await this._exec(
+      `if [ -f ${esc} ]; then (sha256sum ${esc} 2>/dev/null || shasum -a 256 ${esc} 2>/dev/null || openssl dgst -sha256 ${esc} 2>/dev/null) | awk '{print $NF}'; else exit 3; fi`
+    );
+    if (result.code !== 0) return null;
+    const hash = result.stdout.trim().toLowerCase();
+    return /^[0-9a-f]{64}$/.test(hash) ? hash : null;
+  }
+
+  async _remoteFileMatches(targetPath, content) {
+    const expected = sha256Hex(content);
+    const actual = await this._remoteFileHash(targetPath);
+    if (actual) return actual === expected;
+    const remote = await this._readRemoteFile(targetPath);
+    if (!remote.exists) return false;
+    return remote.content === content;
+  }
+
+  async _remoteFileStat(targetPath) {
+    const esc = this.escapeShellArg(targetPath);
+    const result = await this._exec(
+      `if [ -f ${esc} ]; then (stat -c '%a %U:%G' ${esc} 2>/dev/null || stat -f '%Lp %Su:%Sg' ${esc} 2>/dev/null); else exit 3; fi`
+    );
+    if (result.code !== 0) return null;
+    const parts = result.stdout.trim().split(/\s+/);
+    return { mode: parts[0] || null, owner: parts[1] || null };
+  }
+
+  /**
+   * Append `line` to a remote file only when it is absent. When a managed
+   * `marker` block is provided the block content is replaced in place.
+   * @returns {Promise<{changed: boolean, status: string}>}
+   */
+  async ensureLineInFile(filePath, line, { marker } = {}) {
+    if (typeof line !== "string" || line.length === 0) {
+      throw new Error("ensureLineInFile requires a non-empty line");
+    }
+    const target = await this._resolveRemotePath(filePath);
+    const { content: current } = await this._readRemoteFile(target);
+    const next = marker
+      ? applyManagedBlock(current, String(marker), line)
+      : appendLineOnce(current, line);
+    if (next === current) return { changed: false, status: "ok" };
+    if (this.check) return { changed: true, status: "would-change" };
+    await this._writeRemoteFile(target, next);
+    return { changed: true, status: "changed" };
+  }
+
+  /**
+   * Write `content` to a remote file only when content/mode/owner differ.
+   * @returns {Promise<{changed: boolean, status: string}>}
+   */
+  async writeFileIfChanged(filePath, content, { mode, owner } = {}) {
+    const body = typeof content === "string" ? content : String(content ?? "");
+    const target = await this._resolveRemotePath(filePath);
+    const matches = await this._remoteFileMatches(target, body);
+    // YAML parses `mode: 0644` as the integer 420; normalize back to octal text.
+    const modeArg =
+      mode == null
+        ? null
+        : typeof mode === "number"
+          ? mode.toString(8)
+          : String(mode);
+    const desiredMode = modeArg != null ? parseInt(modeArg, 8) : null;
+    const desiredOwner = owner ? String(owner) : null;
+
+    let modeOk = true;
+    let ownerOk = true;
+    if (desiredMode != null || desiredOwner) {
+      const remoteStat = await this._remoteFileStat(target);
+      if (!remoteStat) {
+        modeOk = false;
+        ownerOk = false;
+      } else {
+        if (desiredMode != null) {
+          modeOk =
+            remoteStat.mode != null &&
+            parseInt(remoteStat.mode, 8) === desiredMode;
+        }
+        if (desiredOwner) {
+          const [wantUser, wantGroup] = desiredOwner.split(":");
+          const [haveUser] = (remoteStat.owner || "").split(":");
+          ownerOk = wantGroup
+            ? remoteStat.owner === desiredOwner
+            : haveUser === wantUser;
+        }
+      }
+    }
+
+    if (matches && modeOk && ownerOk) return { changed: false, status: "ok" };
+    if (this.check) return { changed: true, status: "would-change" };
+
+    if (!matches) {
+      await this._writeRemoteFile(target, body);
+    }
+    if (desiredMode != null && !modeOk) {
+      const result = await this._exec(
+        `chmod ${this.escapeShellArg(modeArg)} ${this.escapeShellArg(target)}`
+      );
+      if (result.code !== 0) {
+        throw new Error(
+          `Failed to set mode on ${target}: ${result.stderr || result.stdout}`
+        );
+      }
+    }
+    if (desiredOwner && !ownerOk) {
+      const result = await this._exec(
+        `chown ${this.escapeShellArg(desiredOwner)} ${this.escapeShellArg(target)}`
+      );
+      if (result.code !== 0) {
+        throw new Error(
+          `Failed to set owner on ${target}: ${result.stderr || result.stdout}`
+        );
+      }
+    }
+    return { changed: true, status: "changed" };
+  }
+
+  async _detectPackageManager() {
+    const result = await this._exec(
+      "if command -v dpkg-query >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then echo apt; " +
+        "elif command -v rpm >/dev/null 2>&1; then echo rpm; " +
+        "elif command -v apk >/dev/null 2>&1; then echo apk; " +
+        "elif command -v brew >/dev/null 2>&1; then echo brew; fi"
+    );
+    return result.stdout.trim() || null;
+  }
+
+  async _packageInstalled(manager, name) {
+    const esc = this.escapeShellArg(name);
+    let command;
+    if (manager === "apt") {
+      command = `dpkg-query -W -f='\${Status}' -- ${esc} 2>/dev/null | grep -q 'install ok installed'`;
+    } else if (manager === "rpm") {
+      command = `rpm -q -- ${esc} >/dev/null 2>&1`;
+    } else if (manager === "apk") {
+      command = `apk info -e -- ${esc} >/dev/null 2>&1`;
+    } else {
+      command = `brew list --formula ${esc} >/dev/null 2>&1 || brew list --cask ${esc} >/dev/null 2>&1`;
+    }
+    const result = await this._exec(command);
+    return result.code === 0;
+  }
+
+  /**
+   * Ensure a system package is installed.
+   * @returns {Promise<{changed: boolean, status: string}>}
+   */
+  async ensurePackage(packageName) {
+    const name = String(packageName || "").trim();
+    if (!name) throw new Error("ensurePackage requires a package name");
+    const manager = await this._detectPackageManager();
+    if (!manager) {
+      throw new Error("No supported package manager found on the remote host");
+    }
+    if (await this._packageInstalled(manager, name)) {
+      return { changed: false, status: "ok" };
+    }
+    if (this.check) return { changed: true, status: "would-change" };
+
+    const esc = this.escapeShellArg(name);
+    let command;
+    if (manager === "apt") {
+      command = `export DEBIAN_FRONTEND=noninteractive; apt-get update -qq >/dev/null 2>&1 || true; apt-get install -y -q -- ${esc}`;
+    } else if (manager === "rpm") {
+      command = `if command -v dnf >/dev/null 2>&1; then dnf install -y ${esc}; else yum install -y ${esc}; fi`;
+    } else if (manager === "apk") {
+      command = `apk add --no-cache ${esc}`;
+    } else {
+      command = `brew install ${esc}`;
+    }
+    const result = await this._exec(command);
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to install package ${name}: ${
+          result.stderr || result.stdout || `exit ${result.code}`
+        }`
+      );
+    }
+    return { changed: true, status: "changed" };
+  }
+
+  /**
+   * Ensure a system user exists.
+   * @returns {Promise<{changed: boolean, status: string}>}
+   */
+  async ensureUser(userName, { system = false } = {}) {
+    const name = String(userName || "").trim();
+    if (!name) throw new Error("ensureUser requires a user name");
+    const esc = this.escapeShellArg(name);
+    const exists = await this._exec(`id -u ${esc} >/dev/null 2>&1`);
+    if (exists.code === 0) return { changed: false, status: "ok" };
+    if (this.check) return { changed: true, status: "would-change" };
+
+    const systemFlag = system ? " --system" : "";
+    const command =
+      `if command -v useradd >/dev/null 2>&1; then useradd${systemFlag} -m ${esc} || useradd${systemFlag} ${esc}; ` +
+      `elif command -v adduser >/dev/null 2>&1; then adduser -D ${esc} 2>/dev/null || adduser --disabled-password --gecos '' ${esc}; ` +
+      `else echo 'no user management tool available' >&2; exit 1; fi`;
+    const result = await this._exec(command);
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to create user ${name}: ${
+          result.stderr || result.stdout || `exit ${result.code}`
+        }`
+      );
+    }
+    return { changed: true, status: "changed" };
+  }
+
+  /**
+   * Ensure a service is enabled (or disabled) in the remote service manager.
+   * @returns {Promise<{changed: boolean, status: string}>}
+   */
+  async ensureServiceEnabled(serviceName, { enabled = true } = {}) {
+    const name = String(serviceName || "").trim();
+    if (!name) throw new Error("ensureServiceEnabled requires a service name");
+    const esc = this.escapeShellArg(name);
+    const managerResult = await this._exec(
+      "if command -v systemctl >/dev/null 2>&1; then echo systemctl; " +
+        "elif command -v rc-update >/dev/null 2>&1; then echo openrc; fi"
+    );
+    const manager = managerResult.stdout.trim();
+    if (!manager) {
+      throw new Error("No supported service manager found on the remote host");
+    }
+
+    let currently;
+    if (manager === "systemctl") {
+      const result = await this._exec(
+        `systemctl is-enabled ${esc} 2>/dev/null`
+      );
+      currently = result.code === 0 && /^enabled/.test(result.stdout.trim());
+    } else {
+      const result = await this._exec(
+        `rc-update show 2>/dev/null | grep -qw -- ${esc}`
+      );
+      currently = result.code === 0;
+    }
+
+    if (currently === Boolean(enabled)) return { changed: false, status: "ok" };
+    if (this.check) return { changed: true, status: "would-change" };
+
+    const command =
+      manager === "systemctl"
+        ? `systemctl ${enabled ? "enable" : "disable"} ${esc}`
+        : `rc-update ${enabled ? "add" : "del"} ${esc}`;
+    const result = await this._exec(command);
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to ${enabled ? "enable" : "disable"} service ${name}: ${
+          result.stderr || result.stdout || `exit ${result.code}`
+        }`
+      );
+    }
+    return { changed: true, status: "changed" };
+  }
+
+  /**
+   * Ensure a remote directory exists (mkdir -p semantics with change detection).
+   * @returns {Promise<{changed: boolean, status: string}>}
+   */
+  async ensureDirectory(dirPath) {
+    const target = await this._resolveRemotePath(dirPath);
+    const exists = await this._exec(`[ -d ${this.escapeShellArg(target)} ]`);
+    if (exists.code === 0) return { changed: false, status: "ok" };
+    if (this.check) return { changed: true, status: "would-change" };
+    const result = await this._exec(`mkdir -p ${this.escapeShellArg(target)}`);
+    if (result.code !== 0) {
+      throw new Error(
+        `Failed to create directory ${target}: ${
+          result.stderr || result.stdout
+        }`
+      );
+    }
+    return { changed: true, status: "changed" };
+  }
+
+  _isExcluded(relPath) {
+    if (!this.excludeList || this.excludeList.length === 0) return false;
+    const normalizedPath = String(relPath).replace(/\\/g, "/");
+    const fileName = normalizedPath.split("/").pop();
+    return this.excludeList.some((pattern) => {
+      const normalizedPattern = pattern.replace(/\\/g, "/");
+      if (fileName === pattern || fileName === normalizedPattern) return true;
+      if (
+        normalizedPath.includes(normalizedPattern) ||
+        normalizedPath.endsWith(normalizedPattern)
+      ) {
+        return true;
+      }
+      if (normalizedPattern.includes("*")) {
+        const regex = new RegExp(
+          "^" +
+            normalizedPattern.replace(/\*/g, ".*").replace(/\//g, "[\\\\/]") +
+            "$"
+        );
+        return regex.test(normalizedPath);
+      }
+      return false;
+    });
+  }
+
+  async _buildLocalManifest(localPath, isDirectory) {
+    const entries = [];
+    const walk = async (dir, rel) => {
+      const items = await fs.readdir(dir, { withFileTypes: true });
+      for (const item of items) {
+        const relPath = rel ? `${rel}/${item.name}` : item.name;
+        if (this._isExcluded(relPath)) continue;
+        const fullPath = path.join(dir, item.name);
+        if (item.isDirectory()) {
+          await walk(fullPath, relPath);
+        } else if (item.isFile()) {
+          entries.push(`${await hashFileContents(fullPath)}  ${relPath}`);
+        }
+      }
+    };
+    if (isDirectory) {
+      await walk(localPath, "");
+    } else {
+      const baseName = path.basename(localPath);
+      if (!this._isExcluded(baseName)) {
+        entries.push(`${await hashFileContents(localPath)}  ${baseName}`);
+      }
+    }
+    entries.sort();
+    const body = entries.length ? `${entries.join("\n")}\n` : "";
+    return { body, hash: sha256Hex(body), files: entries.length };
+  }
+
+  async _readStoredManifest(remoteManifestPath) {
+    const esc = this.escapeShellArg(remoteManifestPath);
+    const result = await this._exec(`if [ -f ${esc} ]; then cat ${esc}; fi`);
+    if (result.code !== 0) return null;
+    const lines = result.stdout.split("\n");
+    if (lines[0] !== "daffodil-manifest-v1") return null;
+    const hash = (lines[1] || "").trim();
+    return /^[0-9a-f]{64}$/.test(hash) ? hash : null;
+  }
+
+  async _writeStoredManifest(remoteManifestPath, manifest) {
+    await this._writeRemoteFile(
+      remoteManifestPath,
+      `daffodil-manifest-v1\n${manifest.hash}\n${manifest.files}\n${manifest.body}`
+    );
+  }
+
+  async transferFiles(
+    localPath,
+    destinationPath = this.remotePath,
+    { force = false } = {}
+  ) {
     const transferStartTime = Date.now();
     const spinner = ora(
       `Transferring files from ${localPath} to ${destinationPath}`
@@ -532,6 +1070,26 @@ export class Daffodil {
       throw error;
     }
 
+    // Change detection: compare a local checksum manifest with the remote
+    // before archiving so unchanged content never touches the host.
+    const manifest = await this._buildLocalManifest(localPath, isDirectory);
+    const remoteManifestPath = path.posix
+      .join(destinationPath, ".daffodil-manifest")
+      .replace(/\\/g, "/");
+    const storedHash = await this._readStoredManifest(remoteManifestPath);
+    if (!force && storedHash !== null && storedHash === manifest.hash) {
+      spinner.succeed(chalk.green("Transfer skipped (no changes detected)"));
+      this.logTimeConsumption("Total file transfer", transferStartTime);
+      return { changed: false, status: "ok" };
+    }
+    if (this.check) {
+      spinner.succeed(
+        chalk.yellow("Check mode: transfer would run (content changed)")
+      );
+      this.logTimeConsumption("Total file transfer", transferStartTime);
+      return { changed: true, status: "would-change" };
+    }
+
     // Generate unique archive filename
     const archiveName = `daffodil_${Date.now()}.tar.gz`;
     const archivePath = path.join(process.cwd(), archiveName);
@@ -561,44 +1119,7 @@ export class Daffodil {
       // Build filter function for exclude patterns
       const filterFn =
         this.excludeList.length > 0
-          ? (filePath) => {
-              // tar filter receives path relative to cwd
-              // Normalize path separators for cross-platform compatibility
-              const normalizedPath = filePath.replace(/\\/g, "/");
-              const fileName = path.basename(filePath);
-
-              // Check if any exclude pattern matches
-              return !this.excludeList.some((pattern) => {
-                const normalizedPattern = pattern.replace(/\\/g, "/");
-
-                // Check filename match
-                if (fileName === pattern || fileName === normalizedPattern) {
-                  return true;
-                }
-
-                // Check path match
-                if (
-                  normalizedPath.includes(normalizedPattern) ||
-                  normalizedPath.endsWith(normalizedPattern)
-                ) {
-                  return true;
-                }
-
-                // Support glob-like patterns
-                if (normalizedPattern.includes("*")) {
-                  const regex = new RegExp(
-                    "^" +
-                      normalizedPattern
-                        .replace(/\*/g, ".*")
-                        .replace(/\//g, "[\\\\/]") +
-                      "$"
-                  );
-                  return regex.test(normalizedPath);
-                }
-
-                return false;
-              });
-            }
+          ? (filePath) => !this._isExcluded(filePath)
           : undefined;
 
       // Determine what to archive
@@ -728,6 +1249,9 @@ export class Daffodil {
 
       this.logTimeConsumption("Archive extraction", extractStartTime);
 
+      // Record the applied content so the next transfer can skip unchanged work.
+      await this._writeStoredManifest(remoteManifestPath, manifest);
+
       // Step 4: Clean up local archive
       if (await fs.pathExists(archivePath)) {
         await fs.remove(archivePath);
@@ -736,6 +1260,7 @@ export class Daffodil {
 
       spinner.succeed(chalk.green("Transfer complete (archive method)"));
       this.logTimeConsumption("Total file transfer", transferStartTime);
+      return { changed: true, status: "changed" };
     } catch (err) {
       // Clean up local archive on error
       if (await fs.pathExists(archivePath)) {
@@ -800,32 +1325,87 @@ export class Daffodil {
     }
   }
 
+  /**
+   * Normalize a step command return value into a structured step result.
+   * @param {string} name
+   * @param {*} value
+   * @returns {{name: string, status: string, changed: boolean}}
+   */
+  _normalizeStepResult(name, value) {
+    if (
+      value &&
+      typeof value === "object" &&
+      typeof value.status === "string"
+    ) {
+      return { name, status: value.status, changed: Boolean(value.changed) };
+    }
+    if (
+      value &&
+      typeof value === "object" &&
+      typeof value.changed === "boolean"
+    ) {
+      const changed = value.changed;
+      return {
+        name,
+        status: changed ? (this.check ? "would-change" : "changed") : "ok",
+        changed,
+      };
+    }
+    return { name, status: "ok", changed: false };
+  }
+
+  _validateSteps(steps) {
+    for (const step of steps) {
+      const when = step && step.when;
+      if (when && when !== "changed" && when !== "always") {
+        throw new DeploymentError(`Unsupported when condition: ${when}`, true);
+      }
+    }
+  }
+
   async _deploySingle(steps) {
     const deployStartTime = Date.now();
     if (this.verbose) {
       this.log(`Starting deployment with ${steps.length} step(s)`, "blue");
     }
 
+    this._validateSteps(steps);
     await this.connect();
 
+    const results = [];
+    let anyChanged = false;
     let failedStep = null;
     let failedError = null;
 
     for (let i = 0; i < steps.length; i++) {
       const stepStartTime = Date.now();
-      const { step, command } = steps[i];
+      const { step, command, when } = steps[i];
       console.log(chalk.yellow(`Step ${i + 1}: ${step}`));
+
+      if (when === "changed" && !anyChanged) {
+        console.log(chalk.cyan(`Step ${i + 1}: ${step} [skipped]`));
+        results.push({ name: step, status: "skipped", changed: false });
+        continue;
+      }
 
       if (this.verbose) {
         this.log(`Executing step ${i + 1}: ${step}`, "yellow");
       }
 
       try {
-        await command();
+        const value = await command();
+        const result = this._normalizeStepResult(step, value);
+        results.push(result);
+        if (result.changed) anyChanged = true;
+        console.log(
+          chalk.yellow(`Step ${i + 1}: ${step} `) +
+            chalk.cyan(`[${result.status}]`)
+        );
         this.logTimeConsumption(`Step ${i + 1}: ${step}`, stepStartTime);
       } catch (err) {
         failedStep = step;
         failedError = err;
+        results.push({ name: step, status: "failed", changed: false });
         // Show error message - only detailed in verbose mode
         if (this.verbose) {
           this.logError(`Failed step: ${step}`, err);
@@ -854,6 +1434,7 @@ export class Daffodil {
           `Deployment failed at step: ${failedStep}. ${errorMsg}`,
           false // Include stack trace
         );
+        deploymentError.results = results;
         throw deploymentError;
       } else {
         // Simple error message for non-verbose mode
@@ -866,6 +1447,7 @@ export class Daffodil {
           get: () => deploymentError.message,
           configurable: true,
         });
+        deploymentError.results = results;
         throw deploymentError;
       }
     }
@@ -873,15 +1455,20 @@ export class Daffodil {
     // Only show success if all steps completed
     console.log(chalk.green("? Deployment finished."));
     this.logTimeConsumption("Total deployment", deployStartTime);
+    return results;
   }
 
   /**
    * High-level deploy entrypoint. In single-host mode it runs once, in
    * multi-host mode (inventory) it runs sequentially for each host.
+   * @returns {Promise<Array|Object>} Structured step results:
+   *   single-host → Array<{name, status, changed}>,
+   *   inventory → Array<{host, results: Array<{name, status, changed}>}>.
    */
   async deploy(steps) {
     // Multi-host deployment via inventory
     if (this.inventoryTargets && this.inventoryTargets.length > 0) {
+      const report = [];
       for (const target of this.inventoryTargets) {
         const hostLabel = target.name || target.host;
         console.log("");
@@ -898,8 +1485,11 @@ export class Daffodil {
         this.remoteHost = target.host;
         this.port = target.port || this.port || 22;
         this.ssh = new NodeSSH();
+        this._remoteHome = null;
+        this._remoteHomeKey = null;
 
-        await this._deploySingle(steps);
+        const results = await this._deploySingle(steps);
+        report.push({ host: hostLabel, results });
 
         console.log(
           chalk.cyan(
@@ -907,11 +1497,11 @@ export class Daffodil {
           )
         );
       }
-      return;
+      return report;
     }
 
     // Single-host behavior (existing behavior)
-    await this._deploySingle(steps);
+    return this._deploySingle(steps);
   }
 
   /**

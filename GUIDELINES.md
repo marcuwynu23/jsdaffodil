@@ -181,3 +181,7 @@ Patterns exclude files from packaged transfers (e.g. `node_modules/`, `.env`, `.
 - [DOCUMENTATION.md](./DOCUMENTATION.md) — Developer documentation (`src/`, `bin/jsdaffodil.mjs`, tests)
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — How to contribute
 - [samples/](./samples/) — ESM/CJS examples (deploy, watch, inventory)
+
+## Idempotency
+
+All Daffodil steps must be safe to re-run: line appends are marker-guarded, file writes compare hashes, transfers use manifests, and package/user/service operations check current state. Prefer `when: changed` for restart-style follow-ups.

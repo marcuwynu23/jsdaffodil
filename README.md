@@ -588,3 +588,15 @@ Part of the **Daffodil** family alongside [PyDaffodil](https://pypi.org/project/
 <div align="center">
   <p>Made with love by <a href="https://github.com/marcuwynu23">Mark Wayne B. Menorca</a></p>
 </div>
+
+## Idempotency
+
+Daffodil implementations make SSH provisioning idempotent by design.
+
+- **`ensureLineInFile(path, line, marker)`** — appends a line only when absent; managed marker blocks replace their content.
+- **`writeFileIfChanged(path, content, { mode, owner })`** — writes only when content/mode/owner differ.
+- **`ensurePackage(name)`**, **`ensureUser(name, { system })`**, **`ensureServiceEnabled(name, { enabled })`**, **`ensureDirectory(dir)`** — change-detecting equivalents of raw SSH/package/user/service operations.
+- **`transferFiles(localPath, dest, { force })`** — skips transfer when a content manifest hash matches the remote.
+- Steps may declare **`when: changed`** so follow-ups (e.g. restart) run only after a real change.
+
+Repeated deploys with no source changes produce zero changed steps and no duplicate lines or re-extracts.

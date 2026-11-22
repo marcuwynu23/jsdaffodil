@@ -158,3 +158,7 @@ No separate build step required for the library (source is published as-is per p
 ## Questions
 
 Open an issue on GitHub or check [PyDaffodil](https://github.com/marcuwynu23/pydaffodil) / [GoDaffodil](https://github.com/marcuwynu23/godaffodil) developer docs for cross-language behavior.
+
+## Idempotency
+
+SSH provisioning steps are idempotent: `ensureLineInFile` appends only absent lines, `writeFileIfChanged` compares content/mode/owner, `transferFiles` compares content manifests, and packages/users/services/directories are applied through change-detecting helpers. Steps may use `when: changed`.

@@ -15,7 +15,7 @@
     "sample:esm": "node samples/sample.mjs",
     "sample:common": "node samples/sample.cjs",
     "sample": "npm run sample:esm && npm run sample:common",
-    "test:esm": "node tests/esm/test-daffodil.mjs && node tests/esm/test-watch.mjs && node tests/esm/test-cli.mjs",
+    "test:esm": "node tests/esm/test-daffodil.mjs && node tests/esm/test-watch.mjs && node tests/esm/test-cli.mjs && node tests/esm/test-idempotency.mjs",
     "test:common": "node tests/commonjs/test-daffodil.cjs && node tests/commonjs/test-watch.cjs",
     "test": "npm run test:esm && npm run test:common",
     "format": "prettier --write \"src/**/*.{js,mjs,cjs,json,md}\" \"*.{js,json,md}\"",
