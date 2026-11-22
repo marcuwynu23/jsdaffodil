@@ -56,12 +56,12 @@ Use **`--watch`** with each CLI when your YAML defines a `watch:` block (Go uses
 
 ## Documentation
 
-| Resource | Description |
-| -------- | ----------- |
-| [GUIDELINES.md](./GUIDELINES.md) | Usage: API, `inventory.ini`, `.daffodil.yml` CLI, `watch()`, troubleshooting |
-| [DOCUMENTATION.md](./DOCUMENTATION.md) | Developers: architecture, package layout, tests |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution workflow and PR expectations |
-| [LICENSE](./LICENSE) | MIT License |
+| Resource                               | Description                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------------- |
+| [GUIDELINES.md](./GUIDELINES.md)       | Usage: API, `inventory.ini`, `.daffodil.yml` CLI, `watch()`, troubleshooting |
+| [DOCUMENTATION.md](./DOCUMENTATION.md) | Developers: architecture, package layout, tests                              |
+| [CONTRIBUTING.md](./CONTRIBUTING.md)   | Contribution workflow and PR expectations                                    |
+| [LICENSE](./LICENSE)                   | MIT License                                                                  |
 
 Aligned with [PyDaffodil](https://github.com/marcuwynu23/pydaffodil) and [GoDaffodil](https://github.com/marcuwynu23/godaffodil) documentation set.
 
